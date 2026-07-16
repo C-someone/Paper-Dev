@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "paper-watcher"
+version = "0.1.0"
+description = "Config-driven literature and conference monitoring system."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "jinja2>=3.1",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+fetch = [
+    "beautifulsoup4>=4.12",
+    "feedparser>=6.0",
+    "httpx>=0.27",
+    "lxml>=5.0",
+    "python-dateutil>=2.9",
+]
+dev = [
+    "pytest>=8.0",
+]
+
+[project.scripts]
+paperwatcher = "paper_watcher.main:app"
+
+[tool.setuptools.packages.find]
+include = ["paper_watcher*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

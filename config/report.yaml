@@ -1,0 +1,18 @@
+daily_report:
+  enabled: true
+  output_dir: reports
+  filename_pattern: run_%Y-%m-%d_%H-%M-%S.md
+  sections:
+    - recommendation: read
+      title: 强相关，建议精读
+    - recommendation: skim
+      title: 中等相关，可略读
+    - recommendation: archive
+      title: 仅归档
+
+weekly_report:
+  enabled: true
+  filename_pattern: weekly_%G-W%V.md
+  include_source_stats: true
+  include_failed_sources: true
+  include_manual_checklist: true

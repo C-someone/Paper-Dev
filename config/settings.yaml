@@ -1,0 +1,23 @@
+database:
+  path: data/paper_watcher.sqlite3
+
+runtime:
+  request_timeout_seconds: 20
+  request_retries: 2
+  user_agent: PaperWatcher/0.1
+
+network:
+  per_host_delay_seconds:
+    dblp.org: 5
+  retries:
+    max_attempts: 3
+    backoff_seconds: 10
+  cache:
+    enabled: true
+    dir: state/http_cache
+
+paths:
+  reports_dir: reports
+  logs_dir: logs
+  snapshots_dir: data/snapshots
+  state_dir: state

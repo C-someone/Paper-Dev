@@ -1,0 +1,22 @@
+venues:
+  - canonical_id: ccs
+    short_name: CCS
+    full_name: ACM Conference on Computer and Communications Security
+    aliases:
+      - ACM CCS
+      - Conference on Computer and Communications Security
+    venue_type: conference
+    ccf_level: A
+    area: security
+    default_priority: 5
+
+  - canonical_id: usenix_security
+    short_name: USENIX Security
+    full_name: USENIX Security Symposium
+    aliases:
+      - USENIX Security
+      - USENIX Security Symposium
+    venue_type: conference
+    ccf_level: A
+    area: security
+    default_priority: 5

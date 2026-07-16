@@ -1,0 +1,26 @@
+base_scores:
+  ccf:
+    A: 4
+    B: 3
+    C: 1
+    non_ccf_high_value: 2
+    non_ccf: 0
+    unknown: 0
+  venue_type:
+    journal: 1
+    conference: 1
+    preprint: 0
+    unknown: 0
+
+priority_weight: 0.5
+
+recommendation_thresholds:
+  read: 9
+  skim: 6
+  archive: 3
+  ignore: 0
+
+llm_summary:
+  enabled: false
+  min_score: 6
+  max_per_run: 20

@@ -1,0 +1,30 @@
+strong_keywords:
+  encrypted traffic: 4
+  traffic classification: 4
+  network intrusion detection: 4
+  network anomaly detection: 4
+  phishing detection: 4
+  fraud detection: 5
+  scam detection: 5
+  llm security: 5
+  prompt injection: 5
+  jailbreak: 4
+  agent security: 5
+  android security: 4
+
+medium_keywords:
+  adversarial attack: 2
+  robustness: 2
+  privacy: 2
+  federated learning: 2
+  time series classification: 3
+  behavior modeling: 3
+  causal reasoning: 3
+  rag: 3
+
+negative_keywords:
+  pure cryptography: -3
+  wireless channel estimation: -3
+  image segmentation: -3
+  robot motion planning: -3
+  hardware accelerator: -3
