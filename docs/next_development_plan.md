@@ -68,7 +68,8 @@ failed
 ```text
 RSS/arXiv 源可验证。
 DBLP 源可验证。
-website_watch 当前显示 unsupported_source_type。
+website_watch 源可验证。
+OpenReview 等未实现来源显示 unsupported_source_type。
 验证结果写入 source_verification.json。
 测试覆盖成功、失败、unsupported。
 ```
@@ -217,6 +218,8 @@ reload 错误写入 state/config_reload_errors.jsonl
 
 ## 阶段 5：WebsiteWatcher 最小实现
 
+状态：最小实现已完成。
+
 目标：先支持会议 accepted papers 页面变化监控，不急于解析论文列表。
 
 任务：
@@ -238,6 +241,18 @@ IEEE S&P
 SIGCOMM
 IMC
 RAID
+```
+
+已实现：
+
+```text
+docs/website_watcher_implementation_plan.md
+paper_watcher/fetchers/website_watcher.py
+background 接入 website_watch
+verify-sources 接入 website_watch
+scripts/send_debug_update.py fake-webpage
+单元测试 tests/test_website_watcher.py
+本地 fake-webpage 端到端验证 baseline 和 hash 变化事件
 ```
 
 ---
@@ -262,7 +277,7 @@ accepted decision 过滤。
 当前立即执行：
 
 ```text
-阶段 5：WebsiteWatcher 最小实现
+扩展会议页面监听清单与后台调度细化
 ```
 
 已完成：
@@ -272,4 +287,5 @@ accepted decision 过滤。
 阶段 2：DBLP 请求节流、重试和缓存
 阶段 3：事件查看与 record-only 可观测性
 阶段 4：后台长期运行和配置热更新
+阶段 5：WebsiteWatcher 最小实现
 ```

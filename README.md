@@ -383,13 +383,14 @@ Already implemented:
 - 网络限速、重试和 HTTP 缓存 / Network request throttling, retry, and HTTP cache settings
 - `events` 全局事件查看，支持 record-only 和 notifiable 过滤 / global event inspection with record-only and notifiable filters
 - `background --loop --watch-config` 长期后台和配置热更新错误日志 / long-running background loop with config reload error logging
+- `website_watch` 页面变化监控 / `website_watch` page change monitoring
 
 下一步：
 
 Next implementation step:
 
-- 增加 website-watch 来源类型，先支持会议 accepted papers / program 页面变化监控。
-- Add the website-watch source class, first for accepted papers / program page change monitoring.
+- 扩展会议 accepted papers / program 页面监听清单，并细化不同来源类型的后台调度间隔。
+- Expand the accepted papers / program page monitoring list and refine background scheduling intervals by source type.
 
 ## 基础用法 / Basic Usage
 
@@ -412,6 +413,7 @@ python -m paper_watcher.main events --record-only --limit 10
 python -m paper_watcher.main events --notifiable --format json --limit 10
 python scripts/send_debug_update.py debug-event --source-id debug_fake_rss --title "Debug Paper" --link "https://example.com/debug"
 python scripts/send_debug_update.py fake-rss --port 8766 --title "Fake RSS Paper"
+python scripts/send_debug_update.py fake-webpage --port 8767 --title "Accepted Papers" --body "Paper A"
 python -m unittest discover -s tests
 ```
 
@@ -458,6 +460,17 @@ python3 scripts/send_debug_update.py fake-rss \
   --title "Fake RSS Paper" \
   --link "https://example.com/fake-rss-paper" \
   --guid fake-rss-001
+```
+
+它也可以提供伪网页，用于测试 `website_watch` 的 `css_selector=main`：
+
+It can also serve a fake webpage for testing `website_watch` with `css_selector=main`:
+
+```bash
+python3 scripts/send_debug_update.py fake-webpage \
+  --port 8767 \
+  --title "Accepted Papers" \
+  --body "Paper A"
 ```
 
 `debug_fake_rss` 默认禁用。显式测试时可以指定 `--include-disabled`：

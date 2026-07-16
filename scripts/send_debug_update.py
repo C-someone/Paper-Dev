@@ -13,7 +13,7 @@ from urllib.request import Request, urlopen
 
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
-    if argv and argv[0] in {"debug-event", "fake-rss"}:
+    if argv and argv[0] in {"debug-event", "fake-rss", "fake-webpage"}:
         command = argv.pop(0)
     else:
         command = "debug-event"
@@ -22,6 +22,8 @@ def main(argv: list[str] | None = None) -> int:
         return send_debug_event(argv)
     if command == "fake-rss":
         return serve_fake_rss(argv)
+    if command == "fake-webpage":
+        return serve_fake_webpage(argv)
     print(f"unknown command: {command}", file=sys.stderr)
     return 2
 
@@ -105,6 +107,44 @@ def serve_fake_rss(argv: list[str]) -> int:
     return 0
 
 
+def serve_fake_webpage(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(description="Serve a fake webpage for PaperWatcher website_watch tests.")
+    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=8767)
+    parser.add_argument("--title", default="Accepted Papers")
+    parser.add_argument("--body", default="Paper A")
+    args = parser.parse_args(argv)
+
+    html_text = build_fake_webpage(title=args.title, body=args.body)
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:
+            if self.path not in {"/", "/accepted-papers"}:
+                self.send_response(404)
+                self.end_headers()
+                return
+            raw = html_text.encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(raw)))
+            self.end_headers()
+            self.wfile.write(raw)
+
+        def log_message(self, format: str, *args) -> None:
+            return
+
+    server = ThreadingHTTPServer((args.host, args.port), Handler)
+    print(f"Fake webpage listening on http://{args.host}:{args.port}/accepted-papers")
+    print("css_selector=main")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\nFake webpage stopped.")
+    finally:
+        server.server_close()
+    return 0
+
+
 def build_fake_rss(*, title: str, link: str, guid: str) -> str:
     now = datetime.now(UTC).strftime("%a, %d %b %Y %H:%M:%S +0000")
     return f"""<?xml version="1.0" encoding="UTF-8" ?>
@@ -122,6 +162,23 @@ def build_fake_rss(*, title: str, link: str, guid: str) -> str:
     </item>
   </channel>
 </rss>
+"""
+
+
+def build_fake_webpage(*, title: str, body: str) -> str:
+    return f"""<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>{html.escape(title)}</title>
+  </head>
+  <body>
+    <main>
+      <h1>{html.escape(title)}</h1>
+      <p>{html.escape(body)}</p>
+    </main>
+  </body>
+</html>
 """
 
 

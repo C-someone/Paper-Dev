@@ -11,6 +11,7 @@ from paper_watcher.config_watcher import ConfigSnapshot, load_config_snapshot, m
 from paper_watcher.fetchers.base import SourceState
 from paper_watcher.fetchers.dblp_fetcher import DBLPFetcher
 from paper_watcher.fetchers.rss_fetcher import RSSFetcher
+from paper_watcher.fetchers.website_watcher import WebsiteWatcherFetcher
 from paper_watcher.models import AppConfig, Source, SourceType
 from paper_watcher.network import build_http_client
 from paper_watcher.settings import resolve_project_path
@@ -45,6 +46,12 @@ def run_background_once(
         http_client=http_client,
         allow_cached_on_error=False,
     )
+    website_fetcher = WebsiteWatcherFetcher(
+        timeout_seconds=config.settings.request_timeout_seconds,
+        user_agent=config.settings.user_agent,
+        http_client=http_client,
+        allow_cached_on_error=False,
+    )
 
     scanned = 0
     new_events: list[WatchEvent] = []
@@ -53,7 +60,12 @@ def run_background_once(
         if source_id and current_source_id != source_id:
             continue
         source = source_by_id.get(current_source_id)
-        if not source or source.source_type not in {SourceType.RSS, SourceType.ARXIV, SourceType.DBLP}:
+        if not source or source.source_type not in {
+            SourceType.RSS,
+            SourceType.ARXIV,
+            SourceType.DBLP,
+            SourceType.WEBSITE_WATCH,
+        }:
             continue
         if not source.enabled and not include_disabled:
             continue
@@ -61,8 +73,20 @@ def run_background_once(
         state = source_state.get(source.id, {})
         source_known_paper_ids = set(state.get("known_paper_ids", []))
         first_successful_scan = not state.get("initialized_at")
-        fetcher_for_source = dblp_fetcher if source.source_type == SourceType.DBLP else fetcher
-        result = fetcher_for_source.fetch(source, SourceState(etag=state.get("etag"), last_modified=state.get("last_modified")))
+        if source.source_type == SourceType.DBLP:
+            fetcher_for_source = dblp_fetcher
+        elif source.source_type == SourceType.WEBSITE_WATCH:
+            fetcher_for_source = website_fetcher
+        else:
+            fetcher_for_source = fetcher
+        result = fetcher_for_source.fetch(
+            source,
+            SourceState(
+                etag=state.get("etag"),
+                last_modified=state.get("last_modified"),
+                content_hash=state.get("content_hash"),
+            ),
+        )
         if not result.ok:
             errors += 1
             source_state[source.id] = {
@@ -77,6 +101,7 @@ def run_background_once(
             **state,
             "etag": result.etag or state.get("etag"),
             "last_modified": result.last_modified or state.get("last_modified"),
+            "content_hash": result.content_hash or state.get("content_hash"),
             "last_success_at": datetime.now(UTC).isoformat(),
             "initialized_at": state.get("initialized_at") or datetime.now(UTC).isoformat(),
             "known_paper_ids": sorted(source_known_paper_ids.union(fetched_paper_ids)),

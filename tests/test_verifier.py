@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 from paper_watcher.config_loader import load_config
 from paper_watcher.fetchers.base import FetchResult
+from paper_watcher.models import Source, SourceType
 from paper_watcher.storage.file_storage import FileStateStore
 from paper_watcher.verifier import classify_error, verify_sources
 
@@ -41,9 +42,19 @@ class VerifierTests(unittest.TestCase):
         config = load_config(Path("config"))
         with tempfile.TemporaryDirectory() as directory_name:
             config = replace(config, settings=replace(config.settings, state_dir=Path(directory_name)))
+            unsupported_source = Source(
+                id="openreview_test",
+                name="OpenReview Test",
+                source_type=SourceType.OPENREVIEW,
+                openreview_venue_id="test/venue",
+            )
+            config = replace(
+                config,
+                sources=replace(config.sources, sources=[*config.sources.sources, unsupported_source]),
+            )
             results = verify_sources(
                 config,
-                source_id="usenix_security_2026_accepted",
+                source_id="openreview_test",
                 include_disabled=True,
             )
 

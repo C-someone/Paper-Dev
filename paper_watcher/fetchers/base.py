@@ -20,6 +20,7 @@ class FetchResult:
     fetched_count: int = 0
     etag: str | None = None
     last_modified: str | None = None
+    content_hash: str | None = None
     error: str | None = None
     from_cache: bool = False
 

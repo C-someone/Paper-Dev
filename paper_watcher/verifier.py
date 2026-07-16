@@ -7,6 +7,7 @@ from time import monotonic
 from paper_watcher.fetchers.base import SourceState
 from paper_watcher.fetchers.dblp_fetcher import DBLPFetcher
 from paper_watcher.fetchers.rss_fetcher import RSSFetcher
+from paper_watcher.fetchers.website_watcher import WebsiteWatcherFetcher
 from paper_watcher.models import AppConfig, Source, SourceType
 from paper_watcher.network import build_http_client
 from paper_watcher.settings import resolve_project_path
@@ -46,6 +47,11 @@ def verify_sources(
         user_agent=config.settings.user_agent,
         http_client=http_client,
     )
+    website_fetcher = WebsiteWatcherFetcher(
+        timeout_seconds=config.settings.request_timeout_seconds,
+        user_agent=config.settings.user_agent,
+        http_client=http_client,
+    )
 
     results: list[SourceVerificationResult] = []
     for source in config.sources.sources:
@@ -60,6 +66,8 @@ def verify_sources(
             result = _verify_fetcher(source, rss_fetcher, state)
         elif source.source_type == SourceType.DBLP:
             result = _verify_fetcher(source, dblp_fetcher, state)
+        elif source.source_type == SourceType.WEBSITE_WATCH:
+            result = _verify_fetcher(source, website_fetcher, state)
         else:
             result = SourceVerificationResult(
                 source_id=source.id,
@@ -81,7 +89,11 @@ def _verify_fetcher(source: Source, fetcher, state: dict) -> SourceVerificationR
     checked_at = datetime.now(UTC).isoformat()
     result = fetcher.fetch(
         source,
-        SourceState(etag=state.get("etag"), last_modified=state.get("last_modified")),
+        SourceState(
+            etag=state.get("etag"),
+            last_modified=state.get("last_modified"),
+            content_hash=state.get("content_hash"),
+        ),
     )
     elapsed_ms = int((monotonic() - started) * 1000)
     if result.ok:
@@ -113,9 +125,9 @@ def classify_error(error: str) -> str:
         return "http_429"
     if "503" in text:
         return "http_503"
-    if "invalid feed" in text or "invalid dblp xml" in text or "parse" in text:
+    if "invalid feed" in text or "invalid dblp xml" in text or "parse" in text or "selector" in text:
         return "parse_error"
-    if "missing" in text and ("feed_url" in text or "venue_key" in text):
+    if "missing" in text and ("feed_url" in text or "venue_key" in text or "watch_url" in text or "css_selector" in text):
         return "missing_required_field"
     if any(marker in text for marker in ("timeout", "connection", "network", "reset by peer")):
         return "network_error"
