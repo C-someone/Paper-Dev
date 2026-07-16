@@ -57,6 +57,7 @@ def render_events(events: list[WatchEvent], *, output_format: str = "text") -> s
                         "paper_id": event.paper_id,
                         "title": event.title,
                         "link": event.link,
+                        "raw": event.raw,
                     }
                     for event in events
                 ],
@@ -72,6 +73,18 @@ def render_events(events: list[WatchEvent], *, output_format: str = "text") -> s
     for index, event in enumerate(events, start=1):
         lines.append(f"{index}. [{event.source_id}] {event.title}")
         lines.append(f"   seen_at={event.seen_at}")
+        content_hash = event.raw.get("content_hash")
+        if content_hash:
+            lines.append(f"   content_hash={content_hash}")
+        excerpt = event.raw.get("excerpt")
+        if excerpt:
+            lines.append(f"   excerpt={_truncate(str(excerpt), 180)}")
         if event.link:
             lines.append(f"   {event.link}")
     return "\n".join(lines)
+
+
+def _truncate(text: str, limit: int) -> str:
+    if len(text) <= limit:
+        return text
+    return text[: max(0, limit - 3)].rstrip() + "..."

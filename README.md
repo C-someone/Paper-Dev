@@ -386,13 +386,15 @@ Already implemented:
 - `website_watch` 页面变化监控 / `website_watch` page change monitoring
 - 已配置 5 个会议网页监听源 / 5 configured conference webpage watch sources
 - 基于 `schedule.interval_seconds` 的后台扫描间隔 / background scan intervals based on `schedule.interval_seconds`
+- `source-health` 来源健康状态查看 / `source-health` source health inspection
+- `website_watch` 事件包含 `content_hash` 和页面摘录 / `website_watch` events include `content_hash` and page excerpts
 
 下一步：
 
 Next implementation step:
 
-- 继续补齐 IMC、RAID、CCS 等会议的稳定 accepted papers / program URL，并改进网页变化事件摘要。
-- Continue adding stable accepted papers / program URLs for IMC, RAID, CCS, and improve webpage-change event summaries.
+- 继续补齐 IMC、RAID、CCS 等会议的稳定 accepted papers / program URL，并开始做单篇论文列表解析。
+- Continue adding stable accepted papers / program URLs for IMC, RAID, CCS, and start parsing individual paper lists.
 
 ## 已配置监听源 / Configured Monitoring Sources
 
@@ -461,6 +463,8 @@ python -m paper_watcher.main foreground pull --user debug_user --peek --format j
 python -m paper_watcher.main foreground cursor --user debug_user --reset
 python -m paper_watcher.main debug-server --port 8765
 python -m paper_watcher.main verify-sources --type dblp
+python -m paper_watcher.main source-health --failed
+python -m paper_watcher.main source-health --type website_watch --format json
 python -m paper_watcher.main events --limit 10
 python -m paper_watcher.main events --record-only --limit 10
 python -m paper_watcher.main events --notifiable --format json --limit 10
@@ -580,6 +584,50 @@ python3 -m paper_watcher.main events --format json --limit 10
 `--record-only` 用于检查低优先级 arXiv 记录。`--notifiable` 用于查看前台用户可通过 `foreground pull` 接收的事件。
 
 `--record-only` is useful for checking low-priority arXiv records. `--notifiable` shows events from sources that foreground users can receive through `foreground pull`.
+
+`website_watch` 事件会在 raw 字段中保留页面变化信息：
+
+`website_watch` events keep page-change details in the raw field:
+
+```text
+content_hash
+excerpt
+css_selector
+source_url
+```
+
+文本模式的 `events` 命令会直接显示 `content_hash` 和短摘录，便于快速判断页面变化。
+
+The text-mode `events` command shows `content_hash` and a short excerpt, making webpage changes easier to inspect quickly.
+
+## 来源健康状态 / Source Health
+
+`source-health` 只读取本地状态文件，不触发网络请求：
+
+`source-health` only reads local state files. It does not perform network requests:
+
+```bash
+python3 -m paper_watcher.main source-health
+python3 -m paper_watcher.main source-health --source usenix_security_2026_accepted
+python3 -m paper_watcher.main source-health --type website_watch
+python3 -m paper_watcher.main source-health --failed
+python3 -m paper_watcher.main source-health --due
+python3 -m paper_watcher.main source-health --format json
+```
+
+它汇总：
+
+It summarizes:
+
+```text
+last_scan_at
+next_scan_after
+due
+last_success_at
+last_error
+verification_status
+verification_checked_at
+```
 
 ## 来源验证 / Source Verification
 

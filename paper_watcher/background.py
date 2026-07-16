@@ -222,6 +222,14 @@ def _parse_datetime(value) -> datetime | None:
 
 
 def _paper_to_event(paper, source: Source) -> WatchEvent:
+    raw = {
+        "authors": paper.authors,
+        "abstract": paper.abstract,
+        "published_at": paper.published_at.isoformat() if paper.published_at else None,
+        "venue": paper.venue,
+        "source_url": paper.source_url,
+    }
+    raw.update(paper.raw or {})
     return WatchEvent(
         event_id=f"evt_{uuid4().hex}",
         seen_at=datetime.now(UTC).isoformat(),
@@ -231,10 +239,5 @@ def _paper_to_event(paper, source: Source) -> WatchEvent:
         title=paper.title,
         link=paper.paper_url or paper.pdf_url,
         matched_users=[],
-        raw={
-            "authors": paper.authors,
-            "abstract": paper.abstract,
-            "published_at": paper.published_at.isoformat() if paper.published_at else None,
-            "venue": paper.venue,
-        },
+        raw=raw,
     )

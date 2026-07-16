@@ -67,6 +67,29 @@ class EventListTests(unittest.TestCase):
             self.assertIn('"count": 1', result.response_text)
             self.assertIn('"source_id": "dblp_ccs"', result.response_text)
 
+    def test_text_output_includes_website_watch_excerpt(self) -> None:
+        config = load_config(Path("config"))
+        with tempfile.TemporaryDirectory() as directory_name:
+            state_dir = Path(directory_name)
+            config = replace(config, settings=replace(config.settings, state_dir=state_dir))
+            store = FileStateStore(state_dir)
+            store.append_events(
+                [
+                    make_event(
+                        "evt_1",
+                        "2026-07-15T00:00:00+00:00",
+                        "usenix_security_2026_accepted",
+                        "USENIX Security 2026 Cycle 1 Accepted Papers updated",
+                        raw={"content_hash": "abc123", "excerpt": "Accepted Papers Paper A"},
+                    ),
+                ]
+            )
+
+            result = list_global_events(config, source_id="usenix_security_2026_accepted")
+
+            self.assertIn("content_hash=abc123", result.response_text)
+            self.assertIn("excerpt=Accepted Papers Paper A", result.response_text)
+
     def test_record_only_and_notifiable_are_mutually_exclusive(self) -> None:
         config = load_config(Path("config"))
 
@@ -74,7 +97,13 @@ class EventListTests(unittest.TestCase):
             list_global_events(config, record_only=True, notifiable=True)
 
 
-def make_event(event_id: str, seen_at: str, source_id: str, title: str) -> WatchEvent:
+def make_event(
+    event_id: str,
+    seen_at: str,
+    source_id: str,
+    title: str,
+    raw: dict | None = None,
+) -> WatchEvent:
     return WatchEvent(
         event_id=event_id,
         seen_at=seen_at,
@@ -84,7 +113,7 @@ def make_event(event_id: str, seen_at: str, source_id: str, title: str) -> Watch
         title=title,
         link=f"https://example.com/{event_id}",
         matched_users=[],
-        raw={},
+        raw=raw or {},
     )
 
 

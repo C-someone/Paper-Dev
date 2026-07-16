@@ -12,6 +12,7 @@ from paper_watcher.events import list_global_events
 from paper_watcher.foreground import pull_user_updates, reset_user_cursor
 from paper_watcher.settings import resolve_project_path
 from paper_watcher.scanner import scan_once
+from paper_watcher.source_health import list_source_health
 from paper_watcher.storage.database import connect
 from paper_watcher.storage.migrations import init_db as apply_schema
 from paper_watcher.storage.repository import Repository
@@ -252,6 +253,31 @@ def events_command(
     print(result.response_text)
 
 
+def source_health_command(
+    config_dir: Path = Path("config"),
+    *,
+    source_id: str | None = None,
+    source_type: str | None = None,
+    failed_only: bool = False,
+    due_only: bool = False,
+    output_format: str = "text",
+) -> None:
+    config = _load_or_exit(config_dir)
+    try:
+        result = list_source_health(
+            config,
+            source_id=source_id,
+            source_type=source_type,
+            failed_only=failed_only,
+            due_only=due_only,
+            output_format=output_format,
+        )
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        raise SystemExit(1) from exc
+    print(result.response_text)
+
+
 def _open_repository(config_dir: Path) -> tuple[Repository, object]:
     config = _load_or_exit(config_dir)
     db_path = resolve_project_path(config, config.settings.database_path)
@@ -336,6 +362,12 @@ def build_parser() -> argparse.ArgumentParser:
     events_parser.add_argument("--record-only", action="store_true", help="Only list record-only source events.")
     events_parser.add_argument("--notifiable", action="store_true", help="Only list foreground-notifiable source events.")
     events_parser.add_argument("--format", choices=["text", "json"], default="text", dest="output_format")
+    health_parser = subparsers.add_parser("source-health", help="List file-backed source scan health.")
+    health_parser.add_argument("--source", dest="source_id", help="Only show one source id.")
+    health_parser.add_argument("--type", dest="source_type", help="Only show one source type, e.g. rss or website_watch.")
+    health_parser.add_argument("--failed", action="store_true", help="Only show sources with scan or verification failures.")
+    health_parser.add_argument("--due", action="store_true", help="Only show sources due for a scheduled scan.")
+    health_parser.add_argument("--format", choices=["text", "json"], default="text", dest="output_format")
     return parser
 
 
@@ -404,6 +436,15 @@ def app(argv: list[str] | None = None) -> None:
             source_id=args.source_id,
             record_only=args.record_only,
             notifiable=args.notifiable,
+            output_format=args.output_format,
+        )
+    elif args.command == "source-health":
+        source_health_command(
+            args.config_dir,
+            source_id=args.source_id,
+            source_type=args.source_type,
+            failed_only=args.failed,
+            due_only=args.due,
             output_format=args.output_format,
         )
     else:

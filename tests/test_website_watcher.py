@@ -93,6 +93,8 @@ class WebsiteWatcherBackgroundTests(unittest.TestCase):
             self.assertEqual(source_state["content_hash"], "hash-new")
             self.assertEqual(events[0].source_type, "website_watch")
             self.assertEqual(events[0].title, "USENIX Security 2026 Accepted Papers updated")
+            self.assertEqual(events[0].raw["content_hash"], result_content_hash(config))
+            self.assertIn("excerpt", events[0].raw)
 
     def test_verify_supports_website_watch(self) -> None:
         config = load_config(Path("config"))
@@ -139,6 +141,12 @@ def make_website_paper(config, paper_id: str, title: str):
     html_fetcher = WebsiteWatcherFetcher(http_client=FakeHttpClient([b"<main>Paper B</main>"]))
     result = html_fetcher.fetch(source)
     return replace(result.papers[0], id=paper_id, title=title, normalized_title=title.lower())
+
+
+def result_content_hash(config) -> str:
+    source = next(item for item in config.sources.sources if item.id == "usenix_security_2026_accepted")
+    result = WebsiteWatcherFetcher(http_client=FakeHttpClient([b"<main>Paper B</main>"])).fetch(source)
+    return result.content_hash or ""
 
 
 if __name__ == "__main__":

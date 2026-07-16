@@ -277,7 +277,7 @@ accepted decision 过滤。
 当前立即执行：
 
 ```text
-补齐更多会议网页 URL 与改进 website_watch 事件摘要
+补齐更多会议网页 URL 与解析 accepted papers 单篇条目
 ```
 
 已完成：
@@ -289,6 +289,8 @@ accepted decision 过滤。
 阶段 4：后台长期运行和配置热更新
 阶段 5：WebsiteWatcher 最小实现
 扩展会议页面监听清单与后台调度细化
+source-health 来源健康状态查看
+website_watch 事件 raw 中保留 content_hash / excerpt / css_selector
 ```
 
 扩展会议页面监听清单与后台调度细化已完成的最小内容：
@@ -303,4 +305,17 @@ root 用户订阅上述 website_watch 来源。
 arXiv / DBLP / website_watch 增加 schedule.interval_seconds。
 background --loop 根据 next_scan_after 跳过未到期来源。
 手动 --source 扫描绕过调度，便于测试。
+```
+
+source-health 与 website_watch 事件摘要已完成的最小内容：
+
+```text
+新增 paper_watcher/source_health.py。
+新增 source-health CLI。
+支持 --source / --type / --failed / --due / --format json。
+source-health 只读取本地 state，不触发网络请求。
+events JSON 输出包含 raw。
+events 文本输出对 website_watch 显示 content_hash 和 excerpt。
+background 事件 raw 合并 Paper.raw，保留网页 hash 和摘录。
+单元测试 tests/test_source_health.py。
 ```
