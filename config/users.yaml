@@ -20,6 +20,10 @@ users:
         - source_id: dblp_tkde
       website_watch:
         - source_id: usenix_security_2026_accepted
+        - source_id: nsdi_2026_technical_sessions
+        - source_id: ndss_2026_accepted
+        - source_id: ieee_sp_2026_accepted
+        - source_id: sigcomm_2026_accepted
     delivery:
       format: text
       max_items: 100

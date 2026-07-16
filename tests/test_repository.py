@@ -24,7 +24,7 @@ class RepositoryTests(unittest.TestCase):
                 repository = Repository(connection)
                 repository.upsert_sources(config.sources.sources)
 
-                self.assertEqual(repository.count_sources(), 16)
+                self.assertEqual(repository.count_sources(), 20)
                 source_ids = {row["id"] for row in repository.list_sources()}
                 self.assertIn("arxiv_cs_cr", source_ids)
                 self.assertIn("usenix_security_2026_accepted", source_ids)

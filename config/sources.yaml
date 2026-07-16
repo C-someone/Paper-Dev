@@ -10,6 +10,8 @@ sources:
     priority: 1
     status: needs_verification
     notification_policy: record_only
+    schedule:
+      interval_seconds: 21600
     tags:
       - preprint
       - security
@@ -26,6 +28,8 @@ sources:
     priority: 1
     status: needs_verification
     notification_policy: record_only
+    schedule:
+      interval_seconds: 21600
     tags:
       - preprint
       - machine_learning
@@ -41,6 +45,8 @@ sources:
     venue_type: conference
     priority: 5
     status: needs_verification
+    schedule:
+      interval_seconds: 604800
     tags:
       - ccf_a
       - security
@@ -55,6 +61,8 @@ sources:
     venue_type: conference
     priority: 5
     status: needs_verification
+    schedule:
+      interval_seconds: 604800
     tags:
       - ccf_a
       - security
@@ -69,6 +77,8 @@ sources:
     venue_type: conference
     priority: 5
     status: needs_verification
+    schedule:
+      interval_seconds: 604800
     tags:
       - ccf_a
       - security
@@ -83,6 +93,8 @@ sources:
     venue_type: conference
     priority: 5
     status: needs_verification
+    schedule:
+      interval_seconds: 604800
     tags:
       - ccf_a
       - security
@@ -97,6 +109,8 @@ sources:
     venue_type: conference
     priority: 5
     status: needs_verification
+    schedule:
+      interval_seconds: 604800
     tags:
       - ccf_a
       - network
@@ -111,6 +125,8 @@ sources:
     venue_type: conference
     priority: 5
     status: needs_verification
+    schedule:
+      interval_seconds: 604800
     tags:
       - ccf_b
       - network
@@ -125,6 +141,8 @@ sources:
     venue_type: conference
     priority: 5
     status: needs_verification
+    schedule:
+      interval_seconds: 604800
     tags:
       - ccf_b
       - security
@@ -139,6 +157,8 @@ sources:
     venue_type: conference
     priority: 4
     status: needs_verification
+    schedule:
+      interval_seconds: 604800
     tags:
       - ccf_a
       - data_mining
@@ -153,6 +173,8 @@ sources:
     venue_type: journal
     priority: 5
     status: needs_verification
+    schedule:
+      interval_seconds: 604800
     tags:
       - ccf_a
       - journal
@@ -168,6 +190,8 @@ sources:
     venue_type: journal
     priority: 5
     status: needs_verification
+    schedule:
+      interval_seconds: 604800
     tags:
       - ccf_a
       - journal
@@ -183,6 +207,8 @@ sources:
     venue_type: journal
     priority: 5
     status: needs_verification
+    schedule:
+      interval_seconds: 604800
     tags:
       - ccf_a
       - journal
@@ -198,25 +224,97 @@ sources:
     venue_type: journal
     priority: 4
     status: needs_verification
+    schedule:
+      interval_seconds: 604800
     tags:
       - ccf_a
       - journal
       - data_mining
 
   - id: usenix_security_2026_accepted
-    name: USENIX Security 2026 Accepted Papers
+    name: USENIX Security 2026 Cycle 1 Accepted Papers
     source_type: website_watch
-    enabled: false
-    watch_url: https://www.usenix.org/conference/usenixsecurity26/accepted-papers
+    enabled: true
+    watch_url: https://www.usenix.org/conference/usenixsecurity26/cycle1-accepted-papers
     css_selector: main
     ccf_level: A
     area: security
     venue_type: conference
     priority: 5
     status: needs_verification
+    schedule:
+      interval_seconds: 86400
     tags:
       - ccf_a
       - security
+
+  - id: nsdi_2026_technical_sessions
+    name: NSDI 2026 Technical Sessions
+    source_type: website_watch
+    enabled: true
+    watch_url: https://www.usenix.org/conference/nsdi26/technical-sessions
+    css_selector: main
+    ccf_level: A
+    area: network
+    venue_type: conference
+    priority: 4
+    status: needs_verification
+    schedule:
+      interval_seconds: 86400
+    tags:
+      - ccf_a
+      - network
+
+  - id: ndss_2026_accepted
+    name: NDSS 2026 Accepted Papers
+    source_type: website_watch
+    enabled: true
+    watch_url: https://www.ndss-symposium.org/ndss2026/accepted-papers/
+    css_selector: main
+    ccf_level: A
+    area: security
+    venue_type: conference
+    priority: 5
+    status: needs_verification
+    schedule:
+      interval_seconds: 86400
+    tags:
+      - ccf_a
+      - security
+
+  - id: ieee_sp_2026_accepted
+    name: IEEE S&P 2026 Accepted Papers
+    source_type: website_watch
+    enabled: true
+    watch_url: https://sp2026.ieee-security.org/accepted-papers.html
+    css_selector: main
+    ccf_level: A
+    area: security
+    venue_type: conference
+    priority: 5
+    status: needs_verification
+    schedule:
+      interval_seconds: 86400
+    tags:
+      - ccf_a
+      - security
+
+  - id: sigcomm_2026_accepted
+    name: SIGCOMM 2026 Accepted Papers
+    source_type: website_watch
+    enabled: true
+    watch_url: https://conferences.sigcomm.org/sigcomm/2026/accepted/
+    css_selector: main
+    ccf_level: A
+    area: network
+    venue_type: conference
+    priority: 5
+    status: needs_verification
+    schedule:
+      interval_seconds: 86400
+    tags:
+      - ccf_a
+      - network
 
   - id: debug_fake_rss
     name: Debug Fake RSS

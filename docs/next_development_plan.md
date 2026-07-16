@@ -277,7 +277,7 @@ accepted decision 过滤。
 当前立即执行：
 
 ```text
-扩展会议页面监听清单与后台调度细化
+补齐更多会议网页 URL 与改进 website_watch 事件摘要
 ```
 
 已完成：
@@ -288,4 +288,19 @@ accepted decision 过滤。
 阶段 3：事件查看与 record-only 可观测性
 阶段 4：后台长期运行和配置热更新
 阶段 5：WebsiteWatcher 最小实现
+扩展会议页面监听清单与后台调度细化
+```
+
+扩展会议页面监听清单与后台调度细化已完成的最小内容：
+
+```text
+新增 usenix_security_2026_accepted 官方 cycle 1 页面。
+新增 nsdi_2026_technical_sessions。
+新增 ndss_2026_accepted。
+新增 ieee_sp_2026_accepted。
+新增 sigcomm_2026_accepted。
+root 用户订阅上述 website_watch 来源。
+arXiv / DBLP / website_watch 增加 schedule.interval_seconds。
+background --loop 根据 next_scan_after 跳过未到期来源。
+手动 --source 扫描绕过调度，便于测试。
 ```

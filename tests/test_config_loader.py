@@ -14,7 +14,7 @@ class ConfigLoaderTests(unittest.TestCase):
     def test_load_default_config(self) -> None:
         config = load_config(Path("config"))
 
-        self.assertEqual(len(config.sources.sources), 16)
+        self.assertEqual(len(config.sources.sources), 20)
         self.assertEqual(len(config.venues.venues), 2)
         self.assertEqual(len(config.users.users), 3)
         self.assertEqual(config.sources.sources[0].source_type, SourceType.ARXIV)

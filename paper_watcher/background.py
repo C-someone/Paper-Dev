@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 import sys
 import time
 from pathlib import Path
@@ -24,6 +24,7 @@ def run_background_once(
     *,
     source_id: str | None = None,
     include_disabled: bool = False,
+    respect_schedule: bool = False,
 ) -> tuple[int, int, int]:
     store = FileStateStore(resolve_project_path(config, config.settings.state_dir))
     store.ensure()
@@ -69,8 +70,10 @@ def run_background_once(
             continue
         if not source.enabled and not include_disabled:
             continue
-        scanned += 1
         state = source_state.get(source.id, {})
+        if respect_schedule and not source_id and not _source_is_due(source, state):
+            continue
+        scanned += 1
         source_known_paper_ids = set(state.get("known_paper_ids", []))
         first_successful_scan = not state.get("initialized_at")
         if source.source_type == SourceType.DBLP:
@@ -91,6 +94,8 @@ def run_background_once(
             errors += 1
             source_state[source.id] = {
                 **state,
+                "last_scan_at": datetime.now(UTC).isoformat(),
+                "next_scan_after": _next_scan_after(source),
                 "last_error_at": datetime.now(UTC).isoformat(),
                 "last_error": result.error,
             }
@@ -103,6 +108,8 @@ def run_background_once(
             "last_modified": result.last_modified or state.get("last_modified"),
             "content_hash": result.content_hash or state.get("content_hash"),
             "last_success_at": datetime.now(UTC).isoformat(),
+            "last_scan_at": datetime.now(UTC).isoformat(),
+            "next_scan_after": _next_scan_after(source),
             "initialized_at": state.get("initialized_at") or datetime.now(UTC).isoformat(),
             "known_paper_ids": sorted(source_known_paper_ids.union(fetched_paper_ids)),
             "last_error": None,
@@ -154,6 +161,7 @@ def run_background_loop(
             snapshot.config,
             source_id=source_id,
             include_disabled=include_disabled,
+            respect_schedule=True,
         )
         print(
             f"Background pass completed: scanned={scanned} "
@@ -181,6 +189,36 @@ def _log_config_reload_error(
             "error": error,
         }
     )
+
+
+def _source_is_due(source: Source, state: dict) -> bool:
+    next_scan_after = _parse_datetime(state.get("next_scan_after"))
+    if next_scan_after is None:
+        return True
+    return datetime.now(UTC) >= next_scan_after
+
+
+def _next_scan_after(source: Source) -> str | None:
+    interval_seconds = source.schedule.get("interval_seconds")
+    if interval_seconds is None:
+        return None
+    try:
+        seconds = max(0, float(interval_seconds))
+    except (TypeError, ValueError):
+        return None
+    return (datetime.now(UTC) + timedelta(seconds=seconds)).isoformat()
+
+
+def _parse_datetime(value) -> datetime | None:
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC)
 
 
 def _paper_to_event(paper, source: Source) -> WatchEvent:

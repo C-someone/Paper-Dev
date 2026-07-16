@@ -384,13 +384,66 @@ Already implemented:
 - `events` 全局事件查看，支持 record-only 和 notifiable 过滤 / global event inspection with record-only and notifiable filters
 - `background --loop --watch-config` 长期后台和配置热更新错误日志 / long-running background loop with config reload error logging
 - `website_watch` 页面变化监控 / `website_watch` page change monitoring
+- 已配置 5 个会议网页监听源 / 5 configured conference webpage watch sources
+- 基于 `schedule.interval_seconds` 的后台扫描间隔 / background scan intervals based on `schedule.interval_seconds`
 
 下一步：
 
 Next implementation step:
 
-- 扩展会议 accepted papers / program 页面监听清单，并细化不同来源类型的后台调度间隔。
-- Expand the accepted papers / program page monitoring list and refine background scheduling intervals by source type.
+- 继续补齐 IMC、RAID、CCS 等会议的稳定 accepted papers / program URL，并改进网页变化事件摘要。
+- Continue adding stable accepted papers / program URLs for IMC, RAID, CCS, and improve webpage-change event summaries.
+
+## 已配置监听源 / Configured Monitoring Sources
+
+当前配置总数：
+
+Current configured source count:
+
+```text
+20 sources total
+19 enabled
+```
+
+第一批 `website_watch` 会议网页源：
+
+First batch of `website_watch` conference webpage sources:
+
+```text
+usenix_security_2026_accepted  USENIX Security 2026 Cycle 1 Accepted Papers
+nsdi_2026_technical_sessions   NSDI 2026 Technical Sessions
+ndss_2026_accepted             NDSS 2026 Accepted Papers
+ieee_sp_2026_accepted          IEEE S&P 2026 Accepted Papers
+sigcomm_2026_accepted          SIGCOMM 2026 Accepted Papers
+```
+
+这些来源由 `root` 用户订阅，用于开发期维护全局监听并集。
+
+These sources are subscribed by the `root` user, so the development-stage backend monitors them as part of the global source union.
+
+## 后台调度 / Background Scheduling
+
+来源可以在 `config/sources.yaml` 中设置扫描间隔：
+
+Sources can define scan intervals in `config/sources.yaml`:
+
+```yaml
+schedule:
+  interval_seconds: 86400
+```
+
+后台循环 `background --loop` 会尊重该间隔，并在 `state/source_state.json` 中记录：
+
+`background --loop` respects this interval and records the following fields in `state/source_state.json`:
+
+```text
+last_scan_at
+next_scan_after
+```
+
+显式指定 `--source` 的手动扫描不受调度间隔限制，便于验证和调试。
+
+Manual scans with `--source` bypass schedule intervals for verification and debugging.
 
 ## 基础用法 / Basic Usage
 

@@ -10,7 +10,18 @@ from unittest.mock import patch
 from paper_watcher.background import run_background_once
 from paper_watcher.config_loader import load_config
 from paper_watcher.fetchers.base import FetchResult
-from paper_watcher.models import CcfLevel, NotificationPolicy, Paper, Recommendation, VenueType
+from paper_watcher.models import (
+    CcfLevel,
+    NotificationPolicy,
+    Paper,
+    Recommendation,
+    RssSubscription,
+    User,
+    UserDelivery,
+    UserSubscriptions,
+    UsersConfig,
+    VenueType,
+)
 from paper_watcher.storage.file_storage import FileStateStore
 
 
@@ -19,7 +30,7 @@ class BackgroundTests(unittest.TestCase):
         config = load_config(Path("config"))
 
         with tempfile.TemporaryDirectory() as directory_name:
-            config = replace(config, settings=replace(config.settings, state_dir=Path(directory_name)))
+            config = debug_only_config(config, Path(directory_name))
             fake_fetcher = FakeRSSFetcher(
                 [
                     [make_paper("paper_1", "Existing Paper")],
@@ -53,7 +64,7 @@ class BackgroundTests(unittest.TestCase):
         config = load_config(Path("config"))
 
         with tempfile.TemporaryDirectory() as directory_name:
-            config = replace(config, settings=replace(config.settings, state_dir=Path(directory_name)))
+            config = debug_only_config(config, Path(directory_name))
             sources = []
             for source in config.sources.sources:
                 if source.id == "debug_fake_rss":
@@ -78,6 +89,41 @@ class BackgroundTests(unittest.TestCase):
             self.assertEqual(events[0].title, "Record Only Paper")
             self.assertEqual(events[0].matched_users, [])
 
+    def test_respect_schedule_skips_source_until_next_scan_time(self) -> None:
+        config = load_config(Path("config"))
+
+        with tempfile.TemporaryDirectory() as directory_name:
+            config = debug_only_config(config, Path(directory_name))
+            store = FileStateStore(Path(directory_name))
+            store.save_source_state(
+                {
+                    "debug_fake_rss": {
+                        "initialized_at": "2026-07-15T00:00:00+00:00",
+                        "next_scan_after": "2999-01-01T00:00:00+00:00",
+                        "known_paper_ids": [],
+                    }
+                }
+            )
+            fake_fetcher = FakeRSSFetcher([[make_paper("paper_1", "Skipped Paper")]])
+
+            with patch("paper_watcher.background.RSSFetcher", return_value=fake_fetcher):
+                skipped = run_background_once(
+                    config,
+                    include_disabled=True,
+                    respect_schedule=True,
+                )
+                forced = run_background_once(
+                    config,
+                    source_id="debug_fake_rss",
+                    include_disabled=True,
+                    respect_schedule=True,
+                )
+
+            self.assertEqual(skipped, (0, 0, 0))
+            self.assertEqual(forced, (1, 1, 0))
+            source_state = FileStateStore(Path(directory_name)).load_source_state()["debug_fake_rss"]
+            self.assertIn("last_scan_at", source_state)
+
 
 class FakeRSSFetcher:
     def __init__(self, batches: list[list[Paper]]) -> None:
@@ -88,6 +134,24 @@ class FakeRSSFetcher:
         batch = self.batches[min(self.index, len(self.batches) - 1)]
         self.index += 1
         return FetchResult(source_id=source.id, papers=batch, fetched_count=len(batch), etag=f"etag-{self.index}")
+
+
+def debug_only_config(config, state_dir: Path):
+    debug_user = User(
+        id="debug_user",
+        display_name="Debug User",
+        subscriptions=UserSubscriptions(
+            rss=[RssSubscription(source_id="debug_fake_rss")],
+            indexed_venues=[],
+            website_watch=[],
+        ),
+        delivery=UserDelivery(),
+    )
+    return replace(
+        config,
+        users=UsersConfig(users=[debug_user]),
+        settings=replace(config.settings, state_dir=state_dir),
+    )
 
 
 def make_paper(paper_id: str, title: str) -> Paper:
