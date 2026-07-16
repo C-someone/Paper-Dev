@@ -113,9 +113,15 @@ def serve_fake_webpage(argv: list[str]) -> int:
     parser.add_argument("--port", type=int, default=8767)
     parser.add_argument("--title", default="Accepted Papers")
     parser.add_argument("--body", default="Paper A")
+    parser.add_argument(
+        "--paper",
+        action="append",
+        default=None,
+        help="Paper title to render as a linked list item. Can be repeated.",
+    )
     args = parser.parse_args(argv)
 
-    html_text = build_fake_webpage(title=args.title, body=args.body)
+    html_text = build_fake_webpage(title=args.title, body=args.body, papers=args.paper or [])
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:
@@ -165,7 +171,12 @@ def build_fake_rss(*, title: str, link: str, guid: str) -> str:
 """
 
 
-def build_fake_webpage(*, title: str, body: str) -> str:
+def build_fake_webpage(*, title: str, body: str, papers: list[str] | None = None) -> str:
+    paper_items = "\n".join(
+        f'      <li><a href="/papers/{index}">{html.escape(paper)}</a></li>'
+        for index, paper in enumerate(papers or [], start=1)
+    )
+    paper_list = f"\n      <ul>\n{paper_items}\n      </ul>" if paper_items else ""
     return f"""<!doctype html>
 <html lang="en">
   <head>
@@ -176,6 +187,7 @@ def build_fake_webpage(*, title: str, body: str) -> str:
     <main>
       <h1>{html.escape(title)}</h1>
       <p>{html.escape(body)}</p>
+{paper_list}
     </main>
   </body>
 </html>

@@ -120,6 +120,12 @@ def run_background_once(
         for paper in result.papers:
             if not paper.id:
                 continue
+            if (
+                source.source_type == SourceType.WEBSITE_WATCH
+                and paper.raw.get("website_watch_page")
+                and result.content_hash == state.get("content_hash")
+            ):
+                continue
             if paper.id in global_known_paper_ids or paper.id in source_known_paper_ids:
                 continue
             global_known_paper_ids.add(paper.id)

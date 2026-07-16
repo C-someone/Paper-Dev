@@ -388,13 +388,14 @@ Already implemented:
 - 基于 `schedule.interval_seconds` 的后台扫描间隔 / background scan intervals based on `schedule.interval_seconds`
 - `source-health` 来源健康状态查看 / `source-health` source health inspection
 - `website_watch` 事件包含 `content_hash` 和页面摘录 / `website_watch` events include `content_hash` and page excerpts
+- `website_watch` 可按配置提取单篇论文标题 / `website_watch` can extract individual paper titles by configuration
 
 下一步：
 
 Next implementation step:
 
-- 继续补齐 IMC、RAID、CCS 等会议的稳定 accepted papers / program URL，并开始做单篇论文列表解析。
-- Continue adding stable accepted papers / program URLs for IMC, RAID, CCS, and start parsing individual paper lists.
+- 继续补齐 IMC、RAID、CCS 等会议的稳定 accepted papers / program URL，并改进作者、PDF 链接和更精确的会议 selector。
+- Continue adding stable accepted papers / program URLs for IMC, RAID, CCS, and improve author extraction, PDF links, and more precise conference selectors.
 
 ## 已配置监听源 / Configured Monitoring Sources
 
@@ -471,6 +472,7 @@ python -m paper_watcher.main events --notifiable --format json --limit 10
 python scripts/send_debug_update.py debug-event --source-id debug_fake_rss --title "Debug Paper" --link "https://example.com/debug"
 python scripts/send_debug_update.py fake-rss --port 8766 --title "Fake RSS Paper"
 python scripts/send_debug_update.py fake-webpage --port 8767 --title "Accepted Papers" --body "Paper A"
+python scripts/send_debug_update.py fake-webpage --port 8767 --title "Accepted Papers" --paper "Paper A" --paper "Paper B"
 python -m unittest discover -s tests
 ```
 
@@ -528,6 +530,18 @@ python3 scripts/send_debug_update.py fake-webpage \
   --port 8767 \
   --title "Accepted Papers" \
   --body "Paper A"
+```
+
+也可以用重复的 `--paper` 参数生成可解析的论文列表：
+
+Use repeated `--paper` arguments to render a parsable paper list:
+
+```bash
+python3 scripts/send_debug_update.py fake-webpage \
+  --port 8767 \
+  --title "Accepted Papers" \
+  --paper "Paper A" \
+  --paper "Paper B"
 ```
 
 `debug_fake_rss` 默认禁用。显式测试时可以指定 `--include-disabled`：
@@ -595,6 +609,21 @@ excerpt
 css_selector
 source_url
 ```
+
+如果来源配置了 `metadata.paper_selector`，后台还会为新增标题写入单篇论文事件：
+
+If a source configures `metadata.paper_selector`, the background also writes individual paper events for newly seen titles:
+
+```yaml
+metadata:
+  paper_selector: "main li"
+  paper_title_selector: "a"
+  paper_link_selector: "a"
+```
+
+首次扫描会 baseline 已有标题；后续只推送新增标题。
+
+The first scan baselines existing titles; later scans only emit newly seen titles.
 
 文本模式的 `events` 命令会直接显示 `content_hash` 和短摘录，便于快速判断页面变化。
 

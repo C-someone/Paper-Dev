@@ -4,9 +4,9 @@
 
 ## 1. 目标 / Goal
 
-第一阶段只实现会议 accepted papers / program 页面变化监控，不做论文列表的精细解析。
+第一阶段只实现会议 accepted papers / program 页面变化监控；第二阶段开始支持配置化单篇论文标题解析。
 
-The first stage only detects changes on accepted papers / program pages. It does not parse individual paper lists yet.
+The first stage only detects changes on accepted papers / program pages. The second stage starts configurable individual paper-title parsing.
 
 ## 2. 输入配置 / Source Configuration
 
@@ -37,6 +37,21 @@ watch_url
 css_selector
 ```
 
+可选解析字段：
+
+Optional parsing fields:
+
+```yaml
+metadata:
+  paper_selector: ".paper, li"
+  paper_title_selector: "a, h3"
+  paper_link_selector: "a"
+```
+
+如果未配置 `paper_selector`，系统只生成页面级变化事件。
+
+If `paper_selector` is not configured, the system only emits page-level change events.
+
 ## 3. 抓取逻辑 / Fetch Logic
 
 `WebsiteWatcherFetcher` 执行：
@@ -49,7 +64,8 @@ css_selector
 3. 使用 css_selector 提取目标节点文本。
 4. 规范化空白字符。
 5. 计算 content_hash。
-6. 返回一个代表页面快照的 Paper-like item。
+6. 如配置了 paper_selector，提取单篇论文标题。
+7. 返回页面快照 item 和可解析出的 paper items。
 ```
 
 第一阶段的 item 不是论文，而是页面快照事件：
@@ -62,6 +78,18 @@ title: "<source.name> updated"
 paper_url: watch_url
 raw.content_hash: content_hash
 raw.excerpt: normalized selected text prefix
+```
+
+单篇论文 item：
+
+Individual paper item:
+
+```text
+id: website-paper:<source_id>:<title_hash>
+title: extracted paper title
+paper_url: extracted link or watch_url
+raw.website_watch_item: true
+raw.parent_content_hash: page content_hash
 ```
 
 ## 4. 后台语义 / Background Semantics
@@ -78,12 +106,14 @@ First successful scan:
   record initialized_at and content_hash only; do not write an event.
 
 后续扫描：
-  content_hash 未变：不写事件。
-  content_hash 变化：写入一个全局事件。
+  content_hash 未变且无新标题：不写事件。
+  content_hash 变化：写入页面级事件。
+  出现新 paper title：写入单篇论文事件。
 
 Later scans:
-  unchanged content_hash: no event.
-  changed content_hash: append one global event.
+  unchanged content_hash and no new title: no event.
+  changed content_hash: append one page-level event.
+  new paper title: append one paper-level event.
 ```
 
 这样可以避免后台启动时把旧页面当成新增事件。
@@ -133,7 +163,7 @@ foreground pull 可以按订阅读取 notifiable 事件。
 Later extensions:
 
 ```text
-按页面结构解析论文 title/authors。
+authors / PDF / track 解析。
 对 accepted papers 页面提取单篇论文链接。
 为不同会议维护 selector 模板。
 识别会议年份和 track。

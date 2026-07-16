@@ -38,6 +38,32 @@ class WebsiteWatcherFetcherTests(unittest.TestCase):
         self.assertIn("Accepted Papers", result.papers[0].raw["excerpt"])
         self.assertNotIn("Ignored", result.papers[0].raw["excerpt"])
 
+    def test_fetch_extracts_configured_paper_items(self) -> None:
+        config = load_config(Path("config"))
+        source = next(item for item in config.sources.sources if item.id == "usenix_security_2026_accepted")
+        html = b"""
+        <html>
+          <body>
+            <main>
+              <h1>Accepted Papers</h1>
+              <ul>
+                <li><a href="/paper-a">Paper A: Security</a></li>
+                <li><a href="https://example.com/paper-b">Paper B: Networks</a></li>
+              </ul>
+            </main>
+          </body>
+        </html>
+        """
+        fetcher = WebsiteWatcherFetcher(http_client=FakeHttpClient([html]))
+
+        result = fetcher.fetch(source)
+
+        self.assertTrue(result.ok)
+        self.assertEqual(result.fetched_count, 3)
+        self.assertEqual([paper.title for paper in result.papers[1:]], ["Paper A: Security", "Paper B: Networks"])
+        self.assertEqual(result.papers[1].paper_url, "https://www.usenix.org/paper-a")
+        self.assertEqual(result.papers[1].raw["website_watch_item"], True)
+
     def test_fetch_reports_missing_selector(self) -> None:
         config = load_config(Path("config"))
         source = next(item for item in config.sources.sources if item.id == "usenix_security_2026_accepted")
@@ -95,6 +121,58 @@ class WebsiteWatcherBackgroundTests(unittest.TestCase):
             self.assertEqual(events[0].title, "USENIX Security 2026 Accepted Papers updated")
             self.assertEqual(events[0].raw["content_hash"], result_content_hash(config))
             self.assertIn("excerpt", events[0].raw)
+
+    def test_website_watch_baselines_existing_titles_and_emits_new_titles(self) -> None:
+        config = load_config(Path("config"))
+        with tempfile.TemporaryDirectory() as directory_name:
+            config = replace(config, settings=replace(config.settings, state_dir=Path(directory_name)))
+            source = next(item for item in config.sources.sources if item.id == "usenix_security_2026_accepted")
+            first = WebsiteWatcherFetcher(
+                http_client=FakeHttpClient(
+                    [
+                        b"""
+                        <main>
+                          <h1>Accepted Papers</h1>
+                          <ul><li><a href="/paper-a">Paper A</a></li></ul>
+                        </main>
+                        """
+                    ]
+                )
+            ).fetch(source)
+            second = WebsiteWatcherFetcher(
+                http_client=FakeHttpClient(
+                    [
+                        b"""
+                        <main>
+                          <h1>Accepted Papers</h1>
+                          <ul>
+                            <li><a href="/paper-a">Paper A</a></li>
+                            <li><a href="/paper-b">Paper B</a></li>
+                          </ul>
+                        </main>
+                        """
+                    ]
+                )
+            ).fetch(source)
+            fake_fetcher = FakeWebsiteFetcher([first, second])
+
+            with patch("paper_watcher.background.WebsiteWatcherFetcher", return_value=fake_fetcher):
+                run_background_once(
+                    config,
+                    source_id="usenix_security_2026_accepted",
+                    include_disabled=True,
+                )
+                run_background_once(
+                    config,
+                    source_id="usenix_security_2026_accepted",
+                    include_disabled=True,
+                )
+
+            events = FileStateStore(Path(directory_name)).load_events()
+
+            self.assertEqual([event.title for event in events], ["USENIX Security 2026 Cycle 1 Accepted Papers updated", "Paper B"])
+            self.assertEqual(events[1].raw["website_watch_item"], True)
+            self.assertEqual(events[1].link, "https://www.usenix.org/paper-b")
 
     def test_verify_supports_website_watch(self) -> None:
         config = load_config(Path("config"))

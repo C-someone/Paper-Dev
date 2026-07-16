@@ -244,6 +244,10 @@ sources:
     status: needs_verification
     schedule:
       interval_seconds: 86400
+    metadata:
+      paper_selector: "main li"
+      paper_title_selector: "a"
+      paper_link_selector: "a"
     tags:
       - ccf_a
       - security
@@ -261,6 +265,10 @@ sources:
     status: needs_verification
     schedule:
       interval_seconds: 86400
+    metadata:
+      paper_selector: "main li"
+      paper_title_selector: "a"
+      paper_link_selector: "a"
     tags:
       - ccf_a
       - network
@@ -278,6 +286,10 @@ sources:
     status: needs_verification
     schedule:
       interval_seconds: 86400
+    metadata:
+      paper_selector: "main li"
+      paper_title_selector: "a"
+      paper_link_selector: "a"
     tags:
       - ccf_a
       - security
@@ -295,6 +307,10 @@ sources:
     status: needs_verification
     schedule:
       interval_seconds: 86400
+    metadata:
+      paper_selector: "main li"
+      paper_title_selector: "a"
+      paper_link_selector: "a"
     tags:
       - ccf_a
       - security
@@ -312,6 +328,10 @@ sources:
     status: needs_verification
     schedule:
       interval_seconds: 86400
+    metadata:
+      paper_selector: "main li"
+      paper_title_selector: "a"
+      paper_link_selector: "a"
     tags:
       - ccf_a
       - network

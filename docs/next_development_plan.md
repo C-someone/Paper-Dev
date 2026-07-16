@@ -277,7 +277,7 @@ accepted decision 过滤。
 当前立即执行：
 
 ```text
-补齐更多会议网页 URL 与解析 accepted papers 单篇条目
+补齐更多会议网页 URL，改进 authors/PDF 解析与会议专用 selector
 ```
 
 已完成：
@@ -291,6 +291,7 @@ accepted decision 过滤。
 扩展会议页面监听清单与后台调度细化
 source-health 来源健康状态查看
 website_watch 事件 raw 中保留 content_hash / excerpt / css_selector
+website_watch 配置化解析 accepted papers 单篇标题
 ```
 
 扩展会议页面监听清单与后台调度细化已完成的最小内容：
@@ -318,4 +319,17 @@ events JSON 输出包含 raw。
 events 文本输出对 website_watch 显示 content_hash 和 excerpt。
 background 事件 raw 合并 Paper.raw，保留网页 hash 和摘录。
 单元测试 tests/test_source_health.py。
+```
+
+website_watch 单篇标题解析已完成的最小内容：
+
+```text
+支持 metadata.paper_selector。
+支持 metadata.paper_title_selector。
+支持 metadata.paper_link_selector。
+未配置 paper_selector 时保持页面级事件模式。
+首次扫描 baseline 已有标题，不推送旧论文。
+后续扫描只为新增 title 生成 website-paper 事件。
+fake-webpage 支持重复 --paper 参数。
+单元测试覆盖标题提取、相对链接补全、baseline 与新增标题事件。
 ```
