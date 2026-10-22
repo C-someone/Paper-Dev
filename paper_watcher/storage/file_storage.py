@@ -5,6 +5,7 @@ from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 
 @dataclass(frozen=True)
@@ -28,6 +29,10 @@ class FileStateStore:
         self.user_cursors_path = state_dir / "user_cursors.json"
         self.source_verification_path = state_dir / "source_verification.json"
         self.config_reload_errors_path = state_dir / "config_reload_errors.jsonl"
+        self.source_candidates_path = state_dir / "source_candidates.jsonl"
+        self.candidate_actions_path = state_dir / "candidate_actions.jsonl"
+        self.conference_search_reviews_path = state_dir / "conference_search_reviews.jsonl"
+        self.scheduled_tasks_path = state_dir / "scheduled_tasks.json"
 
     def ensure(self) -> None:
         self.state_dir.mkdir(parents=True, exist_ok=True)
@@ -41,6 +46,14 @@ class FileStateStore:
             self._write_json(self.source_verification_path, {})
         if not self.config_reload_errors_path.exists():
             self.config_reload_errors_path.write_text("", encoding="utf-8")
+        if not self.source_candidates_path.exists():
+            self.source_candidates_path.write_text("", encoding="utf-8")
+        if not self.candidate_actions_path.exists():
+            self.candidate_actions_path.write_text("", encoding="utf-8")
+        if not self.conference_search_reviews_path.exists():
+            self.conference_search_reviews_path.write_text("", encoding="utf-8")
+        if not self.scheduled_tasks_path.exists():
+            self._write_json(self.scheduled_tasks_path, {})
 
     def load_source_state(self) -> dict[str, dict[str, Any]]:
         self.ensure()
@@ -103,6 +116,102 @@ class FileStateStore:
         with self.config_reload_errors_path.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(error, ensure_ascii=False, sort_keys=True))
             handle.write("\n")
+
+    def load_source_candidates(self) -> list[dict[str, Any]]:
+        self.ensure()
+        candidates: list[dict[str, Any]] = []
+        with self.source_candidates_path.open("r", encoding="utf-8") as handle:
+            for line in handle:
+                line = line.strip()
+                if not line:
+                    continue
+                data = json.loads(line)
+                if not isinstance(data, dict):
+                    raise ValueError(f"source candidate line must be an object: {self.source_candidates_path}")
+                candidates.append(data)
+        return candidates
+
+    def save_source_candidates(self, candidates: list[dict[str, Any]]) -> None:
+        self.ensure()
+        with self.source_candidates_path.open("w", encoding="utf-8") as handle:
+            for candidate in candidates:
+                handle.write(json.dumps(candidate, ensure_ascii=False, sort_keys=True))
+                handle.write("\n")
+
+    def append_candidate_action(
+        self,
+        *,
+        candidate_id: str,
+        action: str,
+        actor: str,
+        result: str,
+        dry_run: bool = False,
+        reason: str | None = None,
+        source_id: str | None = None,
+        message: str | None = None,
+    ) -> dict[str, Any]:
+        self.ensure()
+        record = {
+            "action_id": f"act_{uuid4().hex}",
+            "created_at": datetime.now(UTC).isoformat(),
+            "candidate_id": candidate_id,
+            "source_id": source_id,
+            "action": action,
+            "actor": actor,
+            "reason": reason,
+            "dry_run": dry_run,
+            "result": result,
+            "message": message,
+        }
+        with self.candidate_actions_path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(record, ensure_ascii=False, sort_keys=True))
+            handle.write("\n")
+        return record
+
+    def load_candidate_actions(self) -> list[dict[str, Any]]:
+        self.ensure()
+        actions: list[dict[str, Any]] = []
+        with self.candidate_actions_path.open("r", encoding="utf-8") as handle:
+            for line in handle:
+                line = line.strip()
+                if not line:
+                    continue
+                data = json.loads(line)
+                if not isinstance(data, dict):
+                    raise ValueError(f"candidate action line must be an object: {self.candidate_actions_path}")
+                actions.append(data)
+        return actions
+
+    def append_conference_search_reviews(self, reviews: list[dict[str, Any]]) -> None:
+        self.ensure()
+        if not reviews:
+            return
+        with self.conference_search_reviews_path.open("a", encoding="utf-8") as handle:
+            for review in reviews:
+                handle.write(json.dumps(review, ensure_ascii=False, sort_keys=True))
+                handle.write("\n")
+
+    def load_conference_search_reviews(self) -> list[dict[str, Any]]:
+        self.ensure()
+        reviews: list[dict[str, Any]] = []
+        with self.conference_search_reviews_path.open("r", encoding="utf-8") as handle:
+            for line in handle:
+                line = line.strip()
+                if not line:
+                    continue
+                data = json.loads(line)
+                if not isinstance(data, dict):
+                    raise ValueError(f"conference search review line must be an object: {self.conference_search_reviews_path}")
+                reviews.append(data)
+        return reviews
+
+    def load_scheduled_tasks(self) -> dict[str, dict[str, Any]]:
+        self.ensure()
+        return self._read_json(self.scheduled_tasks_path)
+
+    def save_scheduled_tasks(self, tasks: dict[str, dict[str, Any]]) -> None:
+        self.ensure()
+        self._write_json(self.scheduled_tasks_path, tasks)
 
     def _read_json(self, path: Path) -> dict[str, Any]:
         if not path.exists():

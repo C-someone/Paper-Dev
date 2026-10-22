@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from paper_watcher.background import run_background_loop
+from paper_watcher.conference_review_batch import ConferenceReviewBatchResult
 
 
 class BackgroundLoopTests(unittest.TestCase):
@@ -71,6 +72,38 @@ class BackgroundLoopTests(unittest.TestCase):
             lines = [line for line in error_log.read_text(encoding="utf-8").splitlines() if line.strip()]
             self.assertEqual(len(lines), 1)
             self.assertIn("invalid YAML", lines[0])
+
+    def test_loop_runs_scheduled_conference_review_when_enabled(self) -> None:
+        with tempfile.TemporaryDirectory() as directory_name:
+            config_dir = copy_config(Path(directory_name))
+            calls: list[int] = []
+
+            def fake_review(config, **kwargs):
+                calls.append(kwargs["year"])
+                return ConferenceReviewBatchResult(
+                    started_at="2026-07-19T00:00:00+00:00",
+                    finished_at="2026-07-19T00:00:01+00:00",
+                    target_year=kwargs["year"],
+                    items=[],
+                    response_text="",
+                )
+
+            with patch("paper_watcher.background.run_background_once", return_value=(0, 0, 0)):
+                with patch("paper_watcher.background.review_conferences_batch", side_effect=fake_review):
+                    run_background_loop(
+                        config_dir,
+                        interval_seconds=0,
+                        enable_conference_review=True,
+                        conference_review_interval_seconds=86400,
+                        conference_review_year=2026,
+                        sleep_fn=lambda seconds: None,
+                        max_iterations=2,
+                    )
+
+            self.assertEqual(calls, [2026])
+            task_state = Path(directory_name, "state", "scheduled_tasks.json").read_text(encoding="utf-8")
+            self.assertIn("conference_review:2026", task_state)
+            self.assertIn('"last_success_at"', task_state)
 
 
 def copy_config(directory_name: Path) -> Path:

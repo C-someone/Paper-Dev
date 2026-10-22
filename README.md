@@ -100,6 +100,33 @@ File storage / 文件存储
 
 The file storage layer is temporary, but business logic should access it through a narrow interface. This keeps the later migration to SQLite or PostgreSQL from forcing broad foreground/background changes.
 
+在此基础上，项目提供一个可插拔的本地 SQLite 索引层：
+
+On top of that, the project provides a pluggable local SQLite index layer:
+
+```text
+文件负责真相源。
+Files remain the source of truth.
+
+SQLite 只做镜像索引。
+SQLite only mirrors the state as an index.
+
+索引可以随时从文件重建。
+The index can be rebuilt from files at any time.
+```
+
+这个索引不需要目标设备额外安装数据库服务；它使用 Python 自带的 `sqlite3`。
+
+This index does not require an extra database service on the target machine; it uses Python's built-in `sqlite3`.
+
+相关文档：
+
+Related doc:
+
+```text
+docs/pluggable_sql_index_strategy.md
+```
+
 ## 来源优先级策略 / Source Priority Policy
 
 本项目的主要监听目标是 CCF-A/B 类期刊和会议。arXiv 作为低优先级早期信号源处理：
@@ -137,6 +164,93 @@ For monitoring-list hot update design, see:
 
 ```text
 docs/monitoring_hot_reload_design.md
+```
+
+对于没有稳定订阅渠道、年度 URL 经常变化的会议，项目提供会议页面发现流程：
+
+For conferences without stable subscription channels and with changing yearly URLs, the project provides a conference-page discovery flow:
+
+```bash
+python3 -m paper_watcher.main discover-conferences --venue ndss --year 2027
+python3 -m paper_watcher.main candidates list --status pending
+python3 -m paper_watcher.main candidates approve --id cand_xxx --dry-run
+```
+
+候选来源先写入 `state/source_candidates.jsonl`，人工批准后再进入正式 `website_watch` 配置。
+
+Candidates are first written to `state/source_candidates.jsonl`; after manual approval, they enter the formal `website_watch` configuration.
+
+会议页面监控本身还有一层轻型智能体审查：
+
+Conference page monitoring also has a lightweight agent review layer:
+
+- 已知布局命中后，会先让智能体复核条目是否真的像论文或 program 记录。
+- When a known layout matches, the agent first rechecks whether the extracted items really look like papers or program entries.
+- 未知布局会先由智能体尝试分析页面结构并给出新 selector；如果仍然无法判断，系统只保留页面快照。
+- Unknown layouts are first analyzed by the agent for a new selector set; if it still cannot decide, the system keeps only the page snapshot.
+
+对于模糊搜索结果，可以用规则审核器或可选的 Pydantic AI reviewer 判断会议是否召开、关键日期是否可见、录用信息是否公开：
+
+For fuzzy search results, use the rule-based reviewer or optional Pydantic AI reviewer to decide whether a conference is happening, whether key dates are visible, and whether accepted-paper information is public:
+
+```bash
+python3 -m paper_watcher.main review-search-results --input results.json --reviewer rule_based
+python3 -m paper_watcher.main review-search-results --input results.json --reviewer pydantic_ai
+python3 -m paper_watcher.main conference-reviews
+```
+
+如果配置了 `EXA_API_KEY`，也可以直接从会议 profile 发起低频搜索并审核：
+
+If `EXA_API_KEY` is configured, the system can directly run low-frequency search from a venue profile and review the results:
+
+```bash
+python3 -m paper_watcher.main search-conference --venue ndss --year 2027 --num-results 2
+python3 -m paper_watcher.main search-review-conference --venue ndss --year 2027 --reviewer pydantic_ai --dry-run --num-results 2
+python3 -m paper_watcher.main review-conferences --year 2027 --reviewer auto --dry-run --num-results 2
+```
+
+`--dry-run` 不写入 `state/conference_search_reviews.jsonl`，适合调试。
+
+`--dry-run` does not write `state/conference_search_reviews.jsonl`, which is useful for debugging.
+
+高置信度且已公开录用信息的审核记录可以提升为候选监听源：
+
+High-confidence reviews with public accepted-paper information can be promoted into source candidates:
+
+```bash
+python3 -m paper_watcher.main conference-reviews promote --venue ndss --year 2026 --dry-run
+python3 -m paper_watcher.main conference-reviews promote --id review_xxx
+python3 -m paper_watcher.main candidates list --status pending
+python3 -m paper_watcher.main candidates approve --id cand_xxx --dry-run
+```
+
+promotion 只写入 `state/source_candidates.jsonl`，不会直接修改正式监听清单；正式加入 `config/sources.yaml` 仍需要 `candidates approve`。
+
+Promotion only writes `state/source_candidates.jsonl`; it does not directly edit the formal monitoring list. Adding the source to `config/sources.yaml` still requires `candidates approve`.
+
+Pydantic AI 是可选依赖；默认规则审核不需要模型 API。当前 DeepSeek 集成通过 Pydantic AI 的 OpenAI-compatible provider 调用模型，但使用纯 JSON 响应和本地 Pydantic 校验，避免依赖 provider-side tool 调用。
+
+Pydantic AI is an optional dependency; the default rule-based reviewer does not require a model API. The current DeepSeek integration uses Pydantic AI's OpenAI-compatible provider, asks the model for plain JSON, and validates it locally with Pydantic to avoid provider-side tool calls.
+
+相关环境变量：
+
+Related environment variables:
+
+```text
+DEEPSEEK_API_KEY
+DEEPSEEK_API_URL
+DEEPSEEK_API_MODEL
+EXA_API_KEY
+EXA_API_URL
+```
+
+详细设计见：
+
+For the detailed design, see:
+
+```text
+docs/conference_discovery_design.md
+docs/pydantic_ai_search_review_design.md
 ```
 
 ## 用户库 / User Library
@@ -219,6 +333,9 @@ state/
   user_cursors.json             # last foreground pull timestamp/event per user / 用户前台读取 cursor
   source_verification.json      # source verification results / 来源验证结果
   config_reload_errors.jsonl    # hot-reload failures / 热更新失败日志
+  source_candidates.jsonl       # conference website-watch candidates / 会议网页监听候选源
+  conference_search_reviews.jsonl # fuzzy search review records / 模糊搜索审核记录
+  scheduled_tasks.json          # low-frequency background task state / 低频后台任务状态
 ```
 
 `events.jsonl` 是追加式事件流，每一行是一个 JSON 对象。
@@ -273,11 +390,50 @@ Available commands:
 ```text
 paperwatcher background --once
 paperwatcher background --loop --watch-config --interval 300
+paperwatcher background --loop --enable-conference-review --conference-review-year 2026
+paperwatcher background --loop --watch-config --enable-signal-review
 ```
 
 `--once` 执行一次扫描。`--loop` 持续循环扫描直到被中断。配合 `--watch-config` 时，后台会在每轮扫描前检查 YAML 配置文件 fingerprint，并在配置有效时无重启热更新。
 
 `--once` runs a single pass. `--loop` runs repeated passes until interrupted. With `--watch-config`, the worker checks YAML file fingerprints before each pass and reloads valid config changes without restarting.
+
+会议搜索审核是低频后台任务，默认关闭。显式添加 `--enable-conference-review` 后，后台会按 `--conference-review-interval` 触发 `review-conferences` 批处理，调度状态写入 `state/scheduled_tasks.json`。
+
+Conference search review is a low-frequency background task and is disabled by default. With `--enable-conference-review`, the background loop runs `review-conferences` according to `--conference-review-interval`, and task state is written to `state/scheduled_tasks.json`.
+
+DBLP 会议卷/proceedings 等信号可以触发一次会议状态审核。启用 `--enable-signal-review` 后，后台会把这类新增信号交给会议搜索审核流程，判断会议是否已召开、录用或日程信息是否公开，并把后续复查计划写入 `state/scheduled_tasks.json`。
+
+DBLP proceedings-like signals can trigger a conference-status review. With `--enable-signal-review`, newly discovered signals are sent through the conference search review flow. The reviewer decides whether the conference happened, whether accepted/program information is public, and writes follow-up checks to `state/scheduled_tasks.json`.
+
+典型结果：
+
+Typical outcomes:
+
+```text
+proceedings_indexed + accepted/program public
+  -> 写入 conference_search_reviews.jsonl
+  -> 生成 pending source candidate，等待人工 approve
+
+proceedings_indexed + conference date visible but accepted info unclear/not public
+  -> 不创建正式监听源
+  -> scheduled_tasks.json 记录 next_check_after
+
+weak/wrong-year/ambiguous search results
+  -> 标记 needs_review
+  -> 安排短周期复查或人工检查
+```
+
+手动处理某条历史事件：
+
+Manually review one stored historical event:
+
+```bash
+python3 -m paper_watcher.main review-conference-signal \
+  --event-id evt_xxx \
+  --reviewer auto \
+  --num-results 10
+```
 
 一次后台扫描做：
 
@@ -360,6 +516,184 @@ New papers for default:
 
 Later, AstrBot can call the same function and send the response to chat.
 
+## 用户管理 / User Management
+
+当前提供基础订阅管理 CLI：
+
+Basic subscription-management CLI is available:
+
+```bash
+python3 -m paper_watcher.main users list
+python3 -m paper_watcher.main users subscribe --user root --source ndss_2026_accepted
+python3 -m paper_watcher.main users unsubscribe --user root --source ndss_2026_accepted
+```
+
+默认 `--type auto` 会按 source 类型选择订阅槽位：
+
+By default, `--type auto` chooses the subscription bucket from the source type:
+
+```text
+rss / arxiv       -> subscriptions.rss
+dblp              -> subscriptions.indexed_venues
+website_watch     -> subscriptions.website_watch
+```
+
+该命令只编辑 `config/users.yaml`，并在写入后重新加载配置做引用校验。
+
+The command only edits `config/users.yaml` and reloads configuration after writing to validate references.
+
+## 状态查看 / Status Dashboard
+
+当前可以用一个命令查看系统概况：
+
+Use one command to inspect the current system state:
+
+```bash
+python3 -m paper_watcher.main status
+python3 -m paper_watcher.main status --format json
+```
+
+输出包含 source、用户、事件、候选源、会议审核、后台扫描和低频任务状态。
+
+The output includes sources, users, events, candidates, conference reviews, background scans, and low-frequency scheduled task state.
+
+## Web 监控页面 / Browser Monitor
+
+项目提供一个只读 Web 监控页面，不需要额外前端构建步骤：
+
+The project provides a read-only browser monitoring page with no frontend build step:
+
+```bash
+python3 -m paper_watcher.main web --host 127.0.0.1 --port 8080
+```
+
+远程浏览器访问时可以绑定到所有网卡，并设置访问 token：
+
+For remote browser access, bind to all interfaces and set an access token:
+
+```bash
+python3 -m paper_watcher.main web \
+  --host 0.0.0.0 \
+  --port 8080 \
+  --token "$PAPERWATCHER_WEB_TOKEN"
+```
+
+也可以从文件读取 token，避免 token 出现在进程列表中：
+
+You can also read the token from a file, which avoids exposing it in the process list:
+
+```bash
+python3 -m paper_watcher.main web \
+  --host 0.0.0.0 \
+  --port 8080 \
+  --token-file logs/monitor_web.token
+```
+
+浏览器访问：
+
+Open in a browser:
+
+```text
+http://<server-ip>:8080/?token=<token>
+```
+
+页面展示：
+
+The page shows:
+
+```text
+总体状态 / overall status
+最近事件 / recent events
+来源清单 / source list
+来源健康状态 / source health
+用户订阅覆盖 / user subscription coverage
+会议审核记录 / conference reviews
+候选监听源 / source candidates
+```
+
+候选监听源页面支持批准操作：
+
+The source-candidate page supports approval actions:
+
+```text
+Preview
+  预览将要写入 config/sources.yaml 的 source 配置。
+  Preview the source config that would be written to config/sources.yaml.
+
+Approve
+  将 pending candidate 写入 config/sources.yaml，并加入 root 用户 website_watch 订阅。
+  Write the pending candidate into config/sources.yaml and add it to root's website_watch subscriptions.
+```
+
+对应 API：
+
+Related API:
+
+```http
+GET /api/candidates?status=pending&limit=20
+X-PaperWatcher-Token: <token>
+```
+
+```http
+POST /api/candidates/approve
+Content-Type: application/json
+X-PaperWatcher-Token: <token>
+
+{"candidate_id": "cand_xxx", "dry_run": false, "actor": "astrbot:user123"}
+```
+
+```http
+POST /api/candidates/reject
+Content-Type: application/json
+X-PaperWatcher-Token: <token>
+
+{"candidate_id": "cand_xxx", "reason": "wrong year", "actor": "astrbot:user123"}
+```
+
+写操作会追加审计记录到 `state/candidate_actions.jsonl`。
+
+Write operations append audit records to `state/candidate_actions.jsonl`.
+
+该页面不是完全只读：`Candidates -> Approve` 会修改 `config/sources.yaml` 和 `config/users.yaml`。如果绑定 `0.0.0.0`，必须设置 token，并优先只在受信任网络或 SSH 隧道中访问。AstrBot 对接建议采用定时拉取 `GET /api/candidates?status=pending`，再由人类在聊天中确认 approve/reject。
+
+The page is not fully read-only anymore: `Candidates -> Approve` modifies `config/sources.yaml` and `config/users.yaml`. If binding to `0.0.0.0`, always set a token, and prefer trusted networks or an SSH tunnel. AstrBot should use periodic pull via `GET /api/candidates?status=pending`, then ask a human to approve or reject in chat.
+
+## systemd 服务 / systemd Services
+
+项目提供两个 systemd unit 源文件：
+
+The project includes two systemd unit source files:
+
+```text
+deploy/systemd/paperwatcher-web.service
+deploy/systemd/paperwatcher-background.service
+```
+
+安装并启用：
+
+Install and enable them:
+
+```bash
+sudo install -m 0644 deploy/systemd/paperwatcher-web.service /etc/systemd/system/paperwatcher-web.service
+sudo install -m 0644 deploy/systemd/paperwatcher-background.service /etc/systemd/system/paperwatcher-background.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now paperwatcher-web.service paperwatcher-background.service
+```
+
+常用管理命令：
+
+Common management commands:
+
+```bash
+sudo systemctl status paperwatcher-web.service paperwatcher-background.service
+sudo systemctl restart paperwatcher-web.service paperwatcher-background.service
+sudo journalctl -u paperwatcher-web.service -u paperwatcher-background.service -f
+```
+
+这两个服务以 `paperdev` 用户运行，工作目录为项目根目录。Web 服务从 `logs/monitor_web.token` 读取访问 token，后台服务每 300 秒循环扫描并开启配置热更新。
+
+Both services run as the `paperdev` user with the project root as the working directory. The web service reads its access token from `logs/monitor_web.token`; the background service scans every 300 seconds and reloads config changes between passes.
+
 ## 当前进展 / Current Stage
 
 已实现基础能力：
@@ -389,13 +723,19 @@ Already implemented:
 - `source-health` 来源健康状态查看 / `source-health` source health inspection
 - `website_watch` 事件包含 `content_hash` 和页面摘录 / `website_watch` events include `content_hash` and page excerpts
 - `website_watch` 可按配置提取单篇论文标题 / `website_watch` can extract individual paper titles by configuration
+- Exa + Pydantic AI / DeepSeek 会议搜索审核 / Exa + Pydantic AI / DeepSeek conference search review
+- `review-conferences` 批量会议审核 / `review-conferences` batch conference review
+- `conference-reviews promote` 将高置信度审核转为候选监听源 / promote high-confidence reviews into source candidates
+- 后台低频会议审核调度 / low-frequency conference review scheduling in the background loop
+- `users` 订阅管理 CLI / `users` subscription-management CLI
+- `status` 系统状态面板 / `status` system dashboard
 
 下一步：
 
 Next implementation step:
 
-- 继续补齐 IMC、RAID、CCS 等会议的稳定 accepted papers / program URL，并改进作者、PDF 链接和更精确的会议 selector。
-- Continue adding stable accepted papers / program URLs for IMC, RAID, CCS, and improve author extraction, PDF links, and more precise conference selectors.
+- 将 promotion 生成的候选源批量审核、批准和回归验证流程进一步自动化，并继续补齐 IMC、RAID、CCS 等会议的稳定 accepted papers / program URL。
+- Further automate review, approval, and regression validation for promoted candidates, and continue adding stable accepted papers / program URLs for IMC, RAID, CCS, and related venues.
 
 ## 已配置监听源 / Configured Monitoring Sources
 
@@ -404,8 +744,26 @@ Next implementation step:
 Current configured source count:
 
 ```text
-20 sources total
-19 enabled
+38 sources total
+37 enabled
+```
+
+`root` 当前订阅了 37 个启用/可监听源，包括：
+
+`root` currently subscribes to 37 enabled or monitorable sources, including:
+
+```text
+DBLP conferences:
+  CCS, USENIX Security, NDSS, IEEE S&P, SIGCOMM, NSDI, INFOCOM,
+  MobiCom, CoNEXT, MobiSys, IMC, ICNP, DSN, ACSAC, RAID, KDD,
+  ICDM, SIGIR, CIKM, WSDM
+
+DBLP journals:
+  IEEE TDSC, IEEE TIFS, IEEE/ACM TON, IEEE TKDE, IEEE TMC,
+  IEEE JSAC, ACM TOPS, ACM TKDD, ACM TOIS, ACM TWEB
+
+Record-only preprint sources:
+  arXiv cs.CR, arXiv cs.LG
 ```
 
 第一批 `website_watch` 会议网页源：

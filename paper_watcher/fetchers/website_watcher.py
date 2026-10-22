@@ -3,13 +3,16 @@ from __future__ import annotations
 import hashlib
 import re
 from datetime import UTC, datetime
+from pathlib import Path
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 
 from paper_watcher.fetchers.base import FetchResult, SourceState
+from paper_watcher.fetchers.conference_page_handler import extract_conference_page_papers, extract_conference_page_snapshot_text
+from paper_watcher.fetchers.conference_page_supervisor import supervise_conference_page
 from paper_watcher.http_client import RateLimitedHttpClient
-from paper_watcher.models import Paper, Recommendation, Source
+from paper_watcher.models import Paper, Recommendation, Source, VenueType
 from paper_watcher.parsers.normalizer import normalize_title
 
 
@@ -20,10 +23,16 @@ class WebsiteWatcherFetcher:
         user_agent: str = "PaperWatcher/0.1",
         http_client: RateLimitedHttpClient | None = None,
         allow_cached_on_error: bool = True,
+        conference_page_review_enabled: bool = False,
+        conference_page_review_config_dir: Path = Path("config"),
+        conference_page_review_reviewer: str = "auto",
     ) -> None:
         self.timeout_seconds = timeout_seconds
         self.user_agent = user_agent
         self.allow_cached_on_error = allow_cached_on_error
+        self.conference_page_review_enabled = conference_page_review_enabled
+        self.conference_page_review_config_dir = conference_page_review_config_dir
+        self.conference_page_review_reviewer = conference_page_review_reviewer
         self.http_client = http_client or RateLimitedHttpClient(
             timeout_seconds=timeout_seconds,
             user_agent=user_agent,
@@ -63,7 +72,10 @@ class WebsiteWatcherFetcher:
             return FetchResult(source_id=source.id, error=str(exc))
 
         try:
-            selected_text = _select_text(response.content, source.css_selector)
+            if source.venue_type == VenueType.CONFERENCE:
+                selected_text = extract_conference_page_snapshot_text(source, response.content)
+            else:
+                selected_text = _select_text(response.content, source.css_selector)
         except ValueError as exc:
             return FetchResult(source_id=source.id, error=str(exc))
 
@@ -77,14 +89,68 @@ class WebsiteWatcherFetcher:
                 selected_text=selected_text,
             )
         ]
-        papers.extend(
-            _extract_paper_items(
-                source=source,
-                content=response.content,
-                now=now,
-                content_hash=content_hash,
+        if source.venue_type == VenueType.CONFERENCE:
+            if self.conference_page_review_enabled:
+                try:
+                    conference_result = supervise_conference_page(
+                        source,
+                        response.content,
+                        now=now,
+                        content_hash=content_hash,
+                        snapshot_text=selected_text,
+                        review_config_dir=self.conference_page_review_config_dir,
+                        reviewer=self.conference_page_review_reviewer,
+                    )
+                    if conference_result.papers:
+                        papers.extend(conference_result.papers)
+                    if conference_result.diagnostics:
+                        papers[0].raw["conference_page_supervisor"] = conference_result.diagnostics
+                except Exception as exc:
+                    papers[0].raw["conference_page_supervisor_error"] = str(exc)
+                    conference_papers = extract_conference_page_papers(
+                        source=source,
+                        content=response.content,
+                        now=now,
+                        content_hash=content_hash,
+                    )
+                    if conference_papers:
+                        papers.extend(conference_papers)
+                    else:
+                        papers.extend(
+                            _extract_paper_items(
+                                source=source,
+                                content=response.content,
+                                now=now,
+                                content_hash=content_hash,
+                            )
+                        )
+            else:
+                conference_papers = extract_conference_page_papers(
+                    source=source,
+                    content=response.content,
+                    now=now,
+                    content_hash=content_hash,
+                )
+                if conference_papers:
+                    papers.extend(conference_papers)
+                else:
+                    papers.extend(
+                        _extract_paper_items(
+                            source=source,
+                            content=response.content,
+                            now=now,
+                            content_hash=content_hash,
+                        )
+                    )
+        else:
+            papers.extend(
+                _extract_paper_items(
+                    source=source,
+                    content=response.content,
+                    now=now,
+                    content_hash=content_hash,
+                )
             )
-        )
         return FetchResult(
             source_id=source.id,
             papers=papers,

@@ -1,62 +1,78 @@
 users:
-  - id: root
-    display_name: Root Monitor
-    subscriptions:
-      rss:
-        - source_id: arxiv_cs_cr
-        - source_id: arxiv_cs_lg
-      indexed_venues:
-        - source_id: dblp_ccs
-        - source_id: dblp_usenix_security
-        - source_id: dblp_ndss
-        - source_id: dblp_ieee_sp
-        - source_id: dblp_sigcomm
-        - source_id: dblp_imc
-        - source_id: dblp_raid
-        - source_id: dblp_kdd
-        - source_id: dblp_tdsc
-        - source_id: dblp_tifs
-        - source_id: dblp_ton
-        - source_id: dblp_tkde
-      website_watch:
-        - source_id: usenix_security_2026_accepted
-        - source_id: nsdi_2026_technical_sessions
-        - source_id: ndss_2026_accepted
-        - source_id: ieee_sp_2026_accepted
-        - source_id: sigcomm_2026_accepted
-    delivery:
-      format: text
-      max_items: 100
-
-  - id: default
-    display_name: Default User
-    subscriptions:
-      rss:
-        - source_id: arxiv_cs_cr
-        - source_id: arxiv_cs_lg
-      indexed_venues:
-        - source_id: dblp_ccs
-        - source_id: dblp_usenix_security
-        - source_id: dblp_ndss
-        - source_id: dblp_ieee_sp
-        - source_id: dblp_sigcomm
-        - source_id: dblp_imc
-        - source_id: dblp_raid
-        - source_id: dblp_tdsc
-        - source_id: dblp_tifs
-        - source_id: dblp_ton
-      website_watch: []
-    delivery:
-      format: text
-      max_items: 20
-
-  - id: debug_user
-    display_name: Debug User
-    subscriptions:
-      rss:
-        - source_id: debug_fake_rss
-      indexed_venues: []
-      website_watch: []
-    delivery:
-      format: text
-      max_items: 20
+- id: root
+  display_name: Root Monitor
+  subscriptions:
+    rss:
+    - source_id: arxiv_cs_cr
+    - source_id: arxiv_cs_lg
+    indexed_venues:
+    - source_id: dblp_ccs
+    - source_id: dblp_usenix_security
+    - source_id: dblp_ndss
+    - source_id: dblp_ieee_sp
+    - source_id: dblp_sigcomm
+    - source_id: dblp_imc
+    - source_id: dblp_raid
+    - source_id: dblp_kdd
+    - source_id: dblp_tdsc
+    - source_id: dblp_tifs
+    - source_id: dblp_ton
+    - source_id: dblp_tkde
+    - source_id: dblp_nsdi
+    - source_id: dblp_infocom
+    - source_id: dblp_mobicom
+    - source_id: dblp_conext
+    - source_id: dblp_mobisys
+    - source_id: dblp_icnp
+    - source_id: dblp_dsn
+    - source_id: dblp_acsac
+    - source_id: dblp_icdm
+    - source_id: dblp_sigir
+    - source_id: dblp_cikm
+    - source_id: dblp_wsdm
+    - source_id: dblp_tmc
+    - source_id: dblp_jsac
+    - source_id: dblp_tops
+    - source_id: dblp_tkdd
+    - source_id: dblp_tois
+    - source_id: dblp_tweb
+    website_watch:
+    - source_id: usenix_security_2026_accepted
+    - source_id: nsdi_2026_technical_sessions
+    - source_id: ndss_2026_accepted
+    - source_id: ieee_sp_2026_accepted
+    - source_id: sigcomm_2026_accepted
+  delivery:
+    format: text
+    max_items: 100
+- id: default
+  display_name: Default User
+  subscriptions:
+    rss:
+    - source_id: arxiv_cs_cr
+    - source_id: arxiv_cs_lg
+    indexed_venues:
+    - source_id: dblp_ccs
+    - source_id: dblp_usenix_security
+    - source_id: dblp_ndss
+    - source_id: dblp_ieee_sp
+    - source_id: dblp_sigcomm
+    - source_id: dblp_imc
+    - source_id: dblp_raid
+    - source_id: dblp_tdsc
+    - source_id: dblp_tifs
+    - source_id: dblp_ton
+    website_watch: []
+  delivery:
+    format: text
+    max_items: 20
+- id: debug_user
+  display_name: Debug User
+  subscriptions:
+    rss:
+    - source_id: debug_fake_rss
+    indexed_venues: []
+    website_watch: []
+  delivery:
+    format: text
+    max_items: 20

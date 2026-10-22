@@ -1,0 +1,23 @@
+[Unit]
+Description=PaperWatcher browser monitor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=paperdev
+Group=paperdev
+WorkingDirectory=/home/paperdev/文献与会议追踪系统
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=-/home/paperdev/文献与会议追踪系统/.env
+ExecStart=/home/paperdev/文献与会议追踪系统/.venv/bin/python -m paper_watcher.main web --host 0.0.0.0 --port 8080 --token-file logs/monitor_web.token
+Restart=always
+RestartSec=5
+MemoryAccounting=true
+MemoryMax=192M
+UMask=0002
+StandardOutput=append:/home/paperdev/文献与会议追踪系统/logs/monitor_web.log
+StandardError=append:/home/paperdev/文献与会议追踪系统/logs/monitor_web.log
+
+[Install]
+WantedBy=multi-user.target

@@ -163,6 +163,198 @@ sources:
       - ccf_a
       - data_mining
 
+  - id: dblp_nsdi
+    name: DBLP NSDI
+    source_type: dblp
+    enabled: true
+    venue_key: conf/nsdi
+    ccf_level: A
+    area: network
+    venue_type: conference
+    priority: 5
+    status: needs_verification
+    schedule:
+      interval_seconds: 604800
+    tags:
+      - ccf_a
+      - network
+
+  - id: dblp_infocom
+    name: DBLP INFOCOM
+    source_type: dblp
+    enabled: true
+    venue_key: conf/infocom
+    ccf_level: A
+    area: network
+    venue_type: conference
+    priority: 5
+    status: needs_verification
+    schedule:
+      interval_seconds: 604800
+    tags:
+      - ccf_a
+      - network
+
+  - id: dblp_mobicom
+    name: DBLP MobiCom
+    source_type: dblp
+    enabled: true
+    venue_key: conf/mobicom
+    ccf_level: A
+    area: network
+    venue_type: conference
+    priority: 4
+    status: needs_verification
+    schedule:
+      interval_seconds: 604800
+    tags:
+      - ccf_a
+      - network
+
+  - id: dblp_conext
+    name: DBLP CoNEXT
+    source_type: dblp
+    enabled: true
+    venue_key: conf/conext
+    ccf_level: B
+    area: network
+    venue_type: conference
+    priority: 4
+    status: needs_verification
+    schedule:
+      interval_seconds: 604800
+    tags:
+      - ccf_b
+      - network
+
+  - id: dblp_mobisys
+    name: DBLP MobiSys
+    source_type: dblp
+    enabled: true
+    venue_key: conf/mobisys
+    ccf_level: B
+    area: network
+    venue_type: conference
+    priority: 3
+    status: needs_verification
+    schedule:
+      interval_seconds: 604800
+    tags:
+      - ccf_b
+      - network
+
+  - id: dblp_icnp
+    name: DBLP ICNP
+    source_type: dblp
+    enabled: true
+    venue_key: conf/icnp
+    ccf_level: B
+    area: network
+    venue_type: conference
+    priority: 4
+    status: needs_verification
+    schedule:
+      interval_seconds: 604800
+    tags:
+      - ccf_b
+      - network
+
+  - id: dblp_dsn
+    name: DBLP DSN
+    source_type: dblp
+    enabled: true
+    venue_key: conf/dsn
+    ccf_level: B
+    area: security
+    venue_type: conference
+    priority: 4
+    status: needs_verification
+    schedule:
+      interval_seconds: 604800
+    tags:
+      - ccf_b
+      - security
+
+  - id: dblp_acsac
+    name: DBLP ACSAC
+    source_type: dblp
+    enabled: true
+    venue_key: conf/acsac
+    ccf_level: B
+    area: security
+    venue_type: conference
+    priority: 4
+    status: needs_verification
+    schedule:
+      interval_seconds: 604800
+    tags:
+      - ccf_b
+      - security
+
+  - id: dblp_icdm
+    name: DBLP ICDM
+    source_type: dblp
+    enabled: true
+    venue_key: conf/icdm
+    ccf_level: B
+    area: data_mining
+    venue_type: conference
+    priority: 4
+    status: needs_verification
+    schedule:
+      interval_seconds: 604800
+    tags:
+      - ccf_b
+      - data_mining
+
+  - id: dblp_sigir
+    name: DBLP SIGIR
+    source_type: dblp
+    enabled: true
+    venue_key: conf/sigir
+    ccf_level: A
+    area: information_retrieval
+    venue_type: conference
+    priority: 3
+    status: needs_verification
+    schedule:
+      interval_seconds: 604800
+    tags:
+      - ccf_a
+      - information_retrieval
+
+  - id: dblp_cikm
+    name: DBLP CIKM
+    source_type: dblp
+    enabled: true
+    venue_key: conf/cikm
+    ccf_level: B
+    area: information_retrieval
+    venue_type: conference
+    priority: 3
+    status: needs_verification
+    schedule:
+      interval_seconds: 604800
+    tags:
+      - ccf_b
+      - information_retrieval
+
+  - id: dblp_wsdm
+    name: DBLP WSDM
+    source_type: dblp
+    enabled: true
+    venue_key: conf/wsdm
+    ccf_level: B
+    area: data_mining
+    venue_type: conference
+    priority: 3
+    status: needs_verification
+    schedule:
+      interval_seconds: 604800
+    tags:
+      - ccf_b
+      - data_mining
+
   - id: dblp_tdsc
     name: DBLP IEEE TDSC
     source_type: dblp
@@ -230,6 +422,108 @@ sources:
       - ccf_a
       - journal
       - data_mining
+
+  - id: dblp_tmc
+    name: DBLP IEEE TMC
+    source_type: dblp
+    enabled: true
+    venue_key: journals/tmc
+    ccf_level: A
+    area: network
+    venue_type: journal
+    priority: 5
+    status: needs_verification
+    schedule:
+      interval_seconds: 604800
+    tags:
+      - ccf_a
+      - journal
+      - network
+
+  - id: dblp_jsac
+    name: DBLP IEEE JSAC
+    source_type: dblp
+    enabled: true
+    venue_key: journals/jsac
+    ccf_level: A
+    area: network
+    venue_type: journal
+    priority: 4
+    status: needs_verification
+    schedule:
+      interval_seconds: 604800
+    tags:
+      - ccf_a
+      - journal
+      - network
+
+  - id: dblp_tops
+    name: DBLP ACM TOPS
+    source_type: dblp
+    enabled: true
+    venue_key: journals/tissec
+    ccf_level: B
+    area: security
+    venue_type: journal
+    priority: 5
+    status: needs_verification
+    schedule:
+      interval_seconds: 604800
+    tags:
+      - ccf_b
+      - journal
+      - security
+
+  - id: dblp_tkdd
+    name: DBLP ACM TKDD
+    source_type: dblp
+    enabled: true
+    venue_key: journals/tkdd
+    ccf_level: B
+    area: data_mining
+    venue_type: journal
+    priority: 5
+    status: needs_verification
+    schedule:
+      interval_seconds: 604800
+    tags:
+      - ccf_b
+      - journal
+      - data_mining
+
+  - id: dblp_tois
+    name: DBLP ACM TOIS
+    source_type: dblp
+    enabled: true
+    venue_key: journals/tois
+    ccf_level: A
+    area: information_retrieval
+    venue_type: journal
+    priority: 4
+    status: needs_verification
+    schedule:
+      interval_seconds: 604800
+    tags:
+      - ccf_a
+      - journal
+      - information_retrieval
+
+  - id: dblp_tweb
+    name: DBLP ACM TWEB
+    source_type: dblp
+    enabled: true
+    venue_key: journals/tweb
+    ccf_level: B
+    area: information_retrieval
+    venue_type: journal
+    priority: 4
+    status: needs_verification
+    schedule:
+      interval_seconds: 604800
+    tags:
+      - ccf_b
+      - journal
+      - information_retrieval
 
   - id: usenix_security_2026_accepted
     name: USENIX Security 2026 Cycle 1 Accepted Papers
@@ -299,7 +593,7 @@ sources:
     source_type: website_watch
     enabled: true
     watch_url: https://sp2026.ieee-security.org/accepted-papers.html
-    css_selector: main
+    css_selector: div.container
     ccf_level: A
     area: security
     venue_type: conference
@@ -308,9 +602,12 @@ sources:
     schedule:
       interval_seconds: 86400
     metadata:
-      paper_selector: "main li"
+      conference_page_mode: bootstrap_list_group
+      conference_content_selector: div.container
+      paper_selector: "div.list-group-item"
       paper_title_selector: "a"
       paper_link_selector: "a"
+      paper_author_selector: "div.collapse.authorlist"
     tags:
       - ccf_a
       - security
@@ -320,7 +617,7 @@ sources:
     source_type: website_watch
     enabled: true
     watch_url: https://conferences.sigcomm.org/sigcomm/2026/accepted/
-    css_selector: main
+    css_selector: div.main-content
     ccf_level: A
     area: network
     venue_type: conference
@@ -329,9 +626,11 @@ sources:
     schedule:
       interval_seconds: 86400
     metadata:
-      paper_selector: "main li"
-      paper_title_selector: "a"
-      paper_link_selector: "a"
+      conference_page_mode: table_rows
+      conference_content_selector: div.main-content
+      paper_selector: "div.main-content tr, table tr"
+      paper_title_selector: "b"
+      paper_author_selector: "span.table-description"
     tags:
       - ccf_a
       - network

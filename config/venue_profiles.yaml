@@ -1,0 +1,231 @@
+venue_profiles:
+  - venue_id: usenix_security
+    short_name: USENIX Security
+    full_name: USENIX Security Symposium
+    aliases:
+      - USENIX Security
+      - USENIX Security Symposium
+      - USENIX Sec
+    official_domains:
+      - usenix.org
+    dblp_venue_keys:
+      - conf/uss
+    ccf_level: A
+    area: security
+    venue_type: conference
+    priority: 5
+    default_css_selector: main
+    default_schedule_interval_seconds: 86400
+    default_metadata:
+      paper_selector: "main li"
+      paper_title_selector: "a"
+      paper_link_selector: "a"
+    tags:
+      - ccf_a
+      - security
+    url_patterns:
+      - kind: cycle1_accepted
+        url: "https://www.usenix.org/conference/usenixsecurity{yy}/cycle1-accepted-papers"
+        confidence: 0.86
+      - kind: cycle2_accepted
+        url: "https://www.usenix.org/conference/usenixsecurity{yy}/cycle2-accepted-papers"
+        confidence: 0.82
+      - kind: cycle3_accepted
+        url: "https://www.usenix.org/conference/usenixsecurity{yy}/cycle3-accepted-papers"
+        confidence: 0.78
+      - kind: technical_sessions
+        url: "https://www.usenix.org/conference/usenixsecurity{yy}/technical-sessions"
+        confidence: 0.72
+
+  - venue_id: nsdi
+    short_name: NSDI
+    full_name: USENIX Symposium on Networked Systems Design and Implementation
+    aliases:
+      - NSDI
+      - USENIX NSDI
+    official_domains:
+      - usenix.org
+    dblp_venue_keys:
+      - conf/nsdi
+    ccf_level: A
+    area: network
+    venue_type: conference
+    priority: 4
+    default_css_selector: main
+    default_schedule_interval_seconds: 86400
+    default_metadata:
+      paper_selector: "main li"
+      paper_title_selector: "a"
+      paper_link_selector: "a"
+    tags:
+      - ccf_a
+      - network
+    url_patterns:
+      - kind: technical_sessions
+        url: "https://www.usenix.org/conference/nsdi{yy}/technical-sessions"
+        confidence: 0.82
+      - kind: accepted_papers
+        url: "https://www.usenix.org/conference/nsdi{yy}/accepted-papers"
+        confidence: 0.65
+
+  - venue_id: ndss
+    short_name: NDSS
+    full_name: Network and Distributed System Security Symposium
+    aliases:
+      - NDSS
+      - NDSS Symposium
+    official_domains:
+      - ndss-symposium.org
+    dblp_venue_keys:
+      - conf/ndss
+    ccf_level: A
+    area: security
+    venue_type: conference
+    priority: 5
+    default_css_selector: main
+    default_schedule_interval_seconds: 86400
+    default_metadata:
+      paper_selector: "main li"
+      paper_title_selector: "a"
+      paper_link_selector: "a"
+    tags:
+      - ccf_a
+      - security
+    url_patterns:
+      - kind: accepted_papers
+        url: "https://www.ndss-symposium.org/ndss{year}/accepted-papers/"
+        confidence: 0.82
+      - kind: program
+        url: "https://www.ndss-symposium.org/ndss{year}/program/"
+        confidence: 0.68
+
+  - venue_id: ieee_sp
+    short_name: IEEE S&P
+    full_name: IEEE Symposium on Security and Privacy
+    aliases:
+      - IEEE S&P
+      - IEEE Security and Privacy
+      - Oakland
+    official_domains:
+      - ieee-security.org
+    dblp_venue_keys:
+      - conf/sp
+    ccf_level: A
+    area: security
+    venue_type: conference
+    priority: 5
+    default_css_selector: main
+    default_schedule_interval_seconds: 86400
+    default_metadata:
+      paper_selector: "main li"
+      paper_title_selector: "a"
+      paper_link_selector: "a"
+    tags:
+      - ccf_a
+      - security
+    url_patterns:
+      - kind: accepted_papers
+        url: "https://sp{year}.ieee-security.org/accepted-papers.html"
+        confidence: 0.82
+      - kind: program
+        url: "https://sp{year}.ieee-security.org/program.html"
+        confidence: 0.62
+
+  - venue_id: sigcomm
+    short_name: SIGCOMM
+    full_name: ACM SIGCOMM Conference
+    aliases:
+      - SIGCOMM
+      - ACM SIGCOMM
+    official_domains:
+      - conferences.sigcomm.org
+    dblp_venue_keys:
+      - conf/sigcomm
+    ccf_level: A
+    area: network
+    venue_type: conference
+    priority: 5
+    default_css_selector: main
+    default_schedule_interval_seconds: 86400
+    default_metadata:
+      paper_selector: "main li"
+      paper_title_selector: "a"
+      paper_link_selector: "a"
+    tags:
+      - ccf_a
+      - network
+    url_patterns:
+      - kind: accepted_papers
+        url: "https://conferences.sigcomm.org/sigcomm/{year}/accepted/"
+        confidence: 0.80
+      - kind: program
+        url: "https://conferences.sigcomm.org/sigcomm/{year}/program.html"
+        confidence: 0.62
+
+  - venue_id: ccs
+    short_name: CCS
+    full_name: ACM Conference on Computer and Communications Security
+    aliases:
+      - ACM CCS
+      - CCS
+    official_domains:
+      - sigsac.org
+      - acm.org
+    dblp_venue_keys:
+      - conf/ccs
+    ccf_level: A
+    area: security
+    venue_type: conference
+    priority: 5
+    default_css_selector: main
+    default_schedule_interval_seconds: 86400
+    default_metadata:
+      paper_selector: "main li"
+      paper_title_selector: "a"
+      paper_link_selector: "a"
+    tags:
+      - ccf_a
+      - security
+    url_patterns:
+      - kind: accepted_papers
+        url: "https://www.sigsac.org/ccs/CCS{year}/accepted-papers.html"
+        confidence: 0.58
+      - kind: program
+        url: "https://www.sigsac.org/ccs/CCS{year}/program.html"
+        confidence: 0.55
+
+  - venue_id: dsn
+    short_name: DSN
+    full_name: IEEE/IFIP International Conference on Dependable Systems and Networks
+    aliases:
+      - DSN
+      - Dependable Systems and Networks
+      - IEEE DSN
+      - IEEE/IFIP DSN
+    official_domains:
+      - dsn.org
+      - ieee-dsn.org
+      - dependability.org
+    dblp_venue_keys:
+      - conf/dsn
+    ccf_level: B
+    area: security
+    venue_type: conference
+    priority: 4
+    default_css_selector: main
+    default_schedule_interval_seconds: 86400
+    default_metadata:
+      paper_selector: "main li"
+      paper_title_selector: "a"
+      paper_link_selector: "a"
+    tags:
+      - ccf_b
+      - security
+      - dependable_systems
+    url_patterns:
+      - kind: accepted_papers
+        url: "https://dsn{year}.dependability.org/program/accepted-papers/"
+        confidence: 0.55
+      - kind: program
+        url: "https://dsn{year}.dependability.org/program/"
+        confidence: 0.55

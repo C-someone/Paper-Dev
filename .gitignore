@@ -1,5 +1,7 @@
 .env
 .venv/
+.venv.broken-*/
+*.egg-info/
 __pycache__/
 *.py[cod]
 .pytest_cache/

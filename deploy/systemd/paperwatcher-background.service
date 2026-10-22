@@ -1,0 +1,23 @@
+[Unit]
+Description=PaperWatcher background scanner
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=paperdev
+Group=paperdev
+WorkingDirectory=/home/paperdev/文献与会议追踪系统
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=-/home/paperdev/文献与会议追踪系统/.env
+ExecStart=/home/paperdev/文献与会议追踪系统/.venv/bin/python -m paper_watcher.main background --loop --watch-config --interval 300 --enable-signal-review
+Restart=always
+RestartSec=10
+MemoryAccounting=true
+MemoryMax=512M
+UMask=0002
+StandardOutput=append:/home/paperdev/文献与会议追踪系统/logs/background.log
+StandardError=append:/home/paperdev/文献与会议追踪系统/logs/background.log
+
+[Install]
+WantedBy=multi-user.target

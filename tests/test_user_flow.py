@@ -136,6 +136,82 @@ class UserFlowTests(unittest.TestCase):
             self.assertIn('"count": 1', first.response_text)
             self.assertEqual(len(second.events), 1)
 
+    def test_foreground_pull_can_exclude_sources(self) -> None:
+        config = load_config(Path("config"))
+
+        with tempfile.TemporaryDirectory() as directory_name:
+            state_dir = Path(directory_name)
+            config = replace(config, settings=replace(config.settings, state_dir=state_dir))
+            store = FileStateStore(state_dir)
+            store.append_events(
+                [
+                    WatchEvent(
+                        event_id="evt_1",
+                        seen_at="2026-07-15T00:00:00+00:00",
+                        source_id="dblp_ndss",
+                        source_type="dblp",
+                        paper_id="paper_1",
+                        title="NDSS Paper",
+                        link="https://example.com/ndss",
+                        matched_users=[],
+                        raw={},
+                    ),
+                    WatchEvent(
+                        event_id="evt_2",
+                        seen_at="2026-07-15T00:00:01+00:00",
+                        source_id="dblp_ccs",
+                        source_type="dblp",
+                        paper_id="paper_2",
+                        title="DBLP Paper",
+                        link="https://example.com/dblp",
+                        matched_users=[],
+                        raw={},
+                    ),
+                ]
+            )
+
+            result = pull_user_updates(
+                config,
+                "default",
+                exclude_source_ids={"dblp_ndss"},
+            )
+            follow_up = pull_user_updates(config, "default", update_cursor=False)
+
+            self.assertEqual([event.source_id for event in result.events], ["dblp_ccs"])
+            self.assertIn("DBLP Paper", result.response_text)
+            self.assertNotIn("NDSS Paper", result.response_text)
+            self.assertEqual([event.source_id for event in follow_up.events], ["dblp_ndss"])
+            self.assertIn("NDSS Paper", follow_up.response_text)
+
+    def test_foreground_pull_can_browse_without_marking_read(self) -> None:
+        config = load_config(Path("config"))
+
+        with tempfile.TemporaryDirectory() as directory_name:
+            state_dir = Path(directory_name)
+            config = replace(config, settings=replace(config.settings, state_dir=state_dir))
+            store = FileStateStore(state_dir)
+            store.append_events(
+                [
+                    WatchEvent(
+                        event_id="evt_1",
+                        seen_at="2026-07-15T00:00:00+00:00",
+                        source_id="dblp_ccs",
+                        source_type="dblp",
+                        paper_id="paper_1",
+                        title="Browse Only Paper",
+                        link="https://example.com/browse",
+                        matched_users=[],
+                        raw={},
+                    )
+                ]
+            )
+
+            first = pull_user_updates(config, "default", update_cursor=False)
+            second = pull_user_updates(config, "default", update_cursor=False)
+
+            self.assertEqual(len(first.events), 1)
+            self.assertEqual(len(second.events), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

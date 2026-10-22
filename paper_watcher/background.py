@@ -8,6 +8,11 @@ from typing import Callable
 from uuid import uuid4
 
 from paper_watcher.config_watcher import ConfigSnapshot, load_config_snapshot, maybe_reload_config
+from paper_watcher.conference_signal_review import (
+    process_conference_signal_events,
+    run_due_conference_signal_reviews,
+)
+from paper_watcher.conference_review_batch import review_conferences_batch
 from paper_watcher.fetchers.base import SourceState
 from paper_watcher.fetchers.dblp_fetcher import DBLPFetcher
 from paper_watcher.fetchers.rss_fetcher import RSSFetcher
@@ -25,6 +30,9 @@ def run_background_once(
     source_id: str | None = None,
     include_disabled: bool = False,
     respect_schedule: bool = False,
+    enable_signal_review: bool = False,
+    signal_reviewer: str = "auto",
+    signal_review_num_results: int = 10,
 ) -> tuple[int, int, int]:
     store = FileStateStore(resolve_project_path(config, config.settings.state_dir))
     store.ensure()
@@ -52,6 +60,8 @@ def run_background_once(
         user_agent=config.settings.user_agent,
         http_client=http_client,
         allow_cached_on_error=False,
+        conference_page_review_enabled=True,
+        conference_page_review_config_dir=config.config_dir,
     )
 
     scanned = 0
@@ -134,6 +144,13 @@ def run_background_once(
 
     store.append_events(new_events)
     store.save_source_state(source_state)
+    if enable_signal_review:
+        process_conference_signal_events(
+            config,
+            new_events,
+            reviewer=signal_reviewer,
+            num_results=signal_review_num_results,
+        )
     return scanned, len(new_events), errors
 
 
@@ -144,6 +161,14 @@ def run_background_loop(
     watch_config: bool = False,
     source_id: str | None = None,
     include_disabled: bool = False,
+    enable_conference_review: bool = False,
+    conference_review_interval_seconds: float = 86400,
+    conference_review_year: int | None = None,
+    conference_review_reviewer: str = "auto",
+    conference_review_num_results: int = 10,
+    enable_signal_review: bool = False,
+    signal_reviewer: str = "auto",
+    signal_review_num_results: int = 10,
     sleep_fn: Callable[[float], None] = time.sleep,
     max_iterations: int | None = None,
 ) -> None:
@@ -168,15 +193,99 @@ def run_background_loop(
             source_id=source_id,
             include_disabled=include_disabled,
             respect_schedule=True,
+            enable_signal_review=enable_signal_review,
+            signal_reviewer=signal_reviewer,
+            signal_review_num_results=signal_review_num_results,
         )
         print(
             f"Background pass completed: scanned={scanned} "
             f"new_events={new_events} errors={errors}"
         )
+        if enable_conference_review:
+            task_status = run_scheduled_conference_review(
+                snapshot.config,
+                interval_seconds=conference_review_interval_seconds,
+                year=conference_review_year,
+                reviewer=conference_review_reviewer,
+                num_results=conference_review_num_results,
+            )
+            if task_status:
+                print(task_status)
+        if enable_signal_review:
+            signal_results = run_due_conference_signal_reviews(
+                snapshot.config,
+                reviewer=signal_reviewer,
+                num_results=signal_review_num_results,
+            )
+            for result in signal_results:
+                status = "reviewed" if result.reviewed else f"failed error={result.error}"
+                print(f"Conference signal review task: {result.task_key} {status}")
         iteration += 1
         if max_iterations is not None and iteration >= max_iterations:
             break
         sleep_fn(max(0, interval_seconds))
+
+
+def run_scheduled_conference_review(
+    config: AppConfig,
+    *,
+    interval_seconds: float = 86400,
+    year: int | None = None,
+    reviewer: str = "auto",
+    num_results: int = 10,
+) -> str | None:
+    target_year = year or datetime.now(UTC).year
+    task_key = f"conference_review:{target_year}"
+    store = FileStateStore(resolve_project_path(config, config.settings.state_dir))
+    tasks = store.load_scheduled_tasks()
+    task = tasks.get(task_key, {})
+    if not _scheduled_task_is_due(task, interval_seconds):
+        return None
+
+    now = datetime.now(UTC).isoformat()
+    task = {
+        **task,
+        "last_run_at": now,
+        "interval_seconds": interval_seconds,
+        "target_year": target_year,
+        "reviewer": reviewer,
+        "num_results": num_results,
+    }
+    tasks[task_key] = task
+    store.save_scheduled_tasks(tasks)
+
+    try:
+        result = review_conferences_batch(
+            config,
+            year=target_year,
+            reviewer=reviewer,
+            num_results=num_results,
+            dry_run=False,
+        )
+    except Exception as exc:
+        task = {
+            **task,
+            "last_error_at": datetime.now(UTC).isoformat(),
+            "last_error": str(exc),
+        }
+        tasks[task_key] = task
+        store.save_scheduled_tasks(tasks)
+        return f"Conference review task failed: year={target_year} error={exc}"
+
+    task = {
+        **task,
+        "last_success_at": datetime.now(UTC).isoformat(),
+        "last_error": None,
+        "last_error_at": None,
+        "reviewed_count": result.reviewed_count,
+        "error_count": result.error_count,
+    }
+    tasks[task_key] = task
+    store.save_scheduled_tasks(tasks)
+    return (
+        f"Conference review task completed: year={target_year} "
+        f"reviewed={result.reviewed_count} errors={result.error_count}"
+    )
 
 
 def _log_config_reload_error(
@@ -202,6 +311,13 @@ def _source_is_due(source: Source, state: dict) -> bool:
     if next_scan_after is None:
         return True
     return datetime.now(UTC) >= next_scan_after
+
+
+def _scheduled_task_is_due(task: dict, interval_seconds: float) -> bool:
+    last_run_at = _parse_datetime(task.get("last_run_at"))
+    if last_run_at is None:
+        return True
+    return datetime.now(UTC) >= last_run_at + timedelta(seconds=max(0, interval_seconds))
 
 
 def _next_scan_after(source: Source) -> str | None:

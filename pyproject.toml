@@ -24,6 +24,9 @@ fetch = [
 dev = [
     "pytest>=8.0",
 ]
+agent = [
+    "pydantic-ai>=1.0",
+]
 
 [project.scripts]
 paperwatcher = "paper_watcher.main:app"
